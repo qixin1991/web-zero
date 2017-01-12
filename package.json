@@ -4,9 +4,27 @@
     "description": "Nodejs web framework base on Koa@2",
     "main": "index.js",
     "scripts": {
-        "start": "node --harmony-async-await index.js",
+        "start": "babel-node index.js",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
+    "bin":{
+        "web-zero": "index.js"
+    },
     "author": "",
-    "license": "ISC"
+    "license": "ISC",
+    "dependencies": {
+        "expect.js": "^0.3.1",
+        "formidable": "^1.0.17",
+        "ioredis": "^2.3.0",
+        "koa": "^2.0.0",
+        "koa-bodyparser": "^3.2.0",
+        "koa-exception": "^2.0.0",
+        "koa-router": "^7.0.1",
+        "moment": "^2.15.1",
+        "mongodb": "^2.2.8",
+        "mysql": "^2.11.1",
+        "qiniu": "^6.1.11",
+        "redlock": "^2.0.1",
+        "superagent": "^2.1.0"
+    }
 }

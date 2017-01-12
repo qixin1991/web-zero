@@ -1221,5 +1221,92 @@ module.exports = {
     });
   }
 };
-`
+`,
+  base_router: `var base = require('./base');
+var dao = require('../dao/$option');
+var router = new base({
+    prefix: '/$option'
+});
+
+router.get('/', function* () {
+    var doc = {};
+    var data = this.query;
+    var params = {};
+    params.pageParam = { page: data.page, size: data.size };
+    params.doc = doc;
+    this.body = { code: 200, data: yield dao.list(params) };
+});
+
+router.post('/', function* () {
+    var user = yield router.getUserInfo(this.cookies.get('token'));
+    var data = this.request.body;
+    data.createAt = new Date();
+    yield dao.create(data);
+    this.body = { code: 200, msg: 'ok' };
+});
+
+router.put('/', function* () {
+    var user = yield router.getUserInfo(this.cookies.get('token'));
+    var data = this.request.body;
+    yield dao.update(data);
+    this.body = { code: 200, msg: 'ok' };
+});
+
+router.delete('/', function* () {
+    var id = this.query._id;
+    yield dao.delete(id);
+    this.body = { code: 200, msg: 'ok' };
+});
+router.get('/detail', function* () {
+    var doc = yield dao.get(this.query._id);
+    this.body = { code: 200, data: doc };
+});
+
+module.exports = router;`,
+  base_dao: `var mongo = require('./mongo');
+var ObjectId = require('mongodb').ObjectID;
+
+module.exports = {
+    list: (params) => {
+        return (done) => {
+            mongo.findDocuments('$option', params, (results) => {
+                done(null, results);
+            });
+        }
+    },
+    get: (param) => {
+        return (done) => {
+            mongo.findDocument('$option', param, (doc) => {
+                done(null, doc);
+            });
+        }
+    },
+    create: (doc) => {
+        return (done) => {
+            mongo.insertDocument('$option', doc, (err, result) => {
+                if (err) done(new Error("系统异常，新增失败!"), null);
+                done(null, null);
+            });
+        }
+    },
+    update: (doc) => {
+        return (done) => {
+            mongo.updateDocument('$option', { _id: new ObjectId(doc._id) }, doc, (err, result) => {
+                if (err != null || result.result.n == 0) {
+                    done(new Error("系统异常,更新失败!"), null);
+                } else {
+                    done(null, null);
+                }
+            });
+        }
+    },
+    delete: (id) => {
+        return (done) => {
+            mongo.removeDocument('$option', { _id: new ObjectId(id) }, (err, res) => {
+                if (err) done(new Error("系统异常,删除失败!"), null);
+                done(null, null);
+            });
+        }
+    }
+}`
 }

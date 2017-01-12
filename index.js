@@ -1,17 +1,61 @@
+#!/usr/bin/env babel-node
 const fs = require('fs'),
     path = require('path');
 const tpl = require(path.join(__dirname, 'template', 'tpl.js'));
 var pkg = require('./package.json');
 
+const operation = process.argv[2],
+    option = process.argv[3];
+
+switch (operation) {
+    case 'init':
+        init();
+        break;
+    case 'new':
+        if (!option) {
+            console.error('please tell me the module name!');
+            break;
+        }
+        new_module(option);
+        break;
+    default:
+        console.log(' Usage: web-zero operation [init | new] option [module_name]');
+        break;
+}
+// init();
+
 /**
- * auto-run
+ * init project.
  */
-(async () => {
+async function init() {
     await init_dir();
     await init_file();
     await init_dependencies();
-})();
+}
 
+/**
+ * create route and dao files.
+ */
+async function new_module(option) {
+    await new_route(option);
+    await new_dao(option);
+}
+
+function new_route(option) {
+    fs.writeFile(path.join(__dirname, 'routes', option + '.js'), tpl.base_router.replace(/\$option/g, option), (err) => {
+        if (err)
+            throw err;
+        console.log(` ---> Create routes/${option}.js success...`);
+    });
+}
+
+function new_dao(option) {
+    fs.writeFile(path.join(__dirname, 'dao', option + '.js'), tpl.base_dao.replace(/\$option/g, option.toUpperCase()), (err) => {
+        if (err)
+            throw err;
+        console.log(` ---> Create dao/${option}.js success...`);
+    });
+}
 
 /**
  * create route and dao dir.
