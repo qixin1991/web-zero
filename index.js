@@ -1,4 +1,4 @@
-#!/usr/bin/env babel-node
+#!/usr/bin/env node
 const fs = require('fs'),
     path = require('path');
 const tpl = require(path.join(__dirname, 'template', 'tpl.js'));

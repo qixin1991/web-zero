@@ -4,7 +4,7 @@
     "description": "Nodejs web framework base on Koa@2",
     "main": "index.js",
     "scripts": {
-        "start": "babel-node index.js",
+        "start": "6node index.js",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
     "bin":{
