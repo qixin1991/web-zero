@@ -13,6 +13,7 @@ npm install -g web-zero
 - Init project
 
 ```
+mkdir web-zero-example && cd web-zero-example
 web-zero init
 ```
 
@@ -43,4 +44,5 @@ npm install
 npm start
 ```
 Now, open browser to visit http://localhost:3000
+
 Have Fun!
