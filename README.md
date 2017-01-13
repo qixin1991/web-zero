@@ -2,6 +2,9 @@
 
 Nodejs web project code scaffold base on Koa@2.
 
+# demo
+![web-zero-demo](http://brain.qiniudn.com/web-zero-demo.gif)
+
 # Install
 
 ```
