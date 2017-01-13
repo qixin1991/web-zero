@@ -43,6 +43,6 @@ Execute this in terminal, you'll see `routes/users.js` and `dao/users.js` that h
 npm install
 npm start
 ```
-Now, open browser to visit http://localhost:3000
+Now, open browser to visit [http://localhost:3000](http://localhost:3000)
 
 Have Fun!
