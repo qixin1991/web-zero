@@ -24,7 +24,7 @@ app.use(async (ctx, next) => {
 
 // Logger middleware
 app.use(logger());
-// // 异常统一处理器: 捕获业务代码抛出的异常,用户也可自己手动捕获异常,手动捕获后将不会被该处理器处理.
+// 异常统一处理器: 捕获业务代码抛出的异常,用户也可自己手动捕获异常,手动捕获后将不会被该处理器处理.
 app.use(ex('CN'));
 app.use(bodyParser());
 
@@ -43,21 +43,22 @@ var readFiles = () => {
 
 (async () => {
   let files = await readFiles();
-  // console.log(files);
   for (var file of files) {
-    app.use(require(path.join(routerDir, file)).routes());
+    try {
+      app.use(require(path.join(routerDir, file)).routes());
+    } catch (error) {
+      console.error(' ---> 启动失败，似乎数据库配置有问题哦~');
+      process.exit(0);
+    }
   }
 })();
 
 var port = 3000;
 app.listen(port, function () {
-  console.log('Server running on port ' + port);
+  console.log(\` ---> Server running on port: \${port}\`);
 });
 `,
   base: `var KoaRouter = require('koa-router');
-var redis = require('../dao/redis');
-var mongo = require('../dao/mongo');
-var config = require('../conf/config');
 var formidable = require('formidable');
 
 KoaRouter.prototype.getUserInfo = (token) => {
@@ -67,60 +68,29 @@ KoaRouter.prototype.getUserInfo = (token) => {
       err.name = "token_error";
       reject(err);
     }
-    redis.get(redis.generateKey(token), (err, value) => {
-      if (err || value == null) {
-        if (err) console.error('---> Redis 获取 Token异常: %s 将从Mongodb中获取...', err);
-
-        mongo.findDocument(mongo.USERS, { token: token, ValidFor: 'Y', ValidTo: { $gt: new Date() }, last_login: { $gte: new Date(new Date().getTime() - config.Redis.ttl * 1000) } }, function (doc) {
-          if (!doc) {
-            err = new Error('登录信息已过期,请先登录!');
-            err.name = "token_error";
-            reject(err);
-          } else {
-            // cache into redis
-            var key = redis.generateKey(token);
-            var loginInfo = {
-              CardCode: doc.CardCode, CardName: doc.CardName,
-              is_admin: doc.is_admin, roles: doc.roles, station: doc.station,
-              station_name: doc.station_name, Name: doc.Name,
-              City: doc.City, County: doc.County, Street: doc.Street,
-              GroupName: doc.GroupName,
-              ValidTo: doc.ValidTo,
-              U_ServiceMode: doc.U_ServiceMode
-            };
-            if (doc.is_jzez) // 家装e站的账号
-              loginInfo.is_jzez = doc.is_jzez;
-            redis.set(key, JSON.stringify(loginInfo), config.Redis.ttl);
-            resovle(loginInfo);
-          }
-        });
-
-      } else {
-        value = JSON.parse(value);
-        resovle(value);
-      }
-    });
-  })
+    // Login userinfo
+    resovle({});
+  });
 };
 
 /**
  *  上传文件表单转换.
- *  返回文件路径(用完记得删除文件)
+ *  返回文件路径(如果是临时文件，用完记得删除文件)
  */
 KoaRouter.prototype.formParse = function (ctx) {
-  return function (done) {
+  return new Promise((resovle, reject) => {
     var form = new formidable.IncomingForm();
     //设置上传目录
     form.uploadDir = '/tmp/';
     form.keepExtensions = true;
     form.parse(ctx.req, function (err, fields, files) {
       if (err) {
-        done(err, null);
+        reject(err);
       }
       var path = files.uploadFile.path;
-      done(null, path);
+      resovle(path);
     });
-  }
+  });
 }
 
 module.exports = KoaRouter;
@@ -128,7 +98,7 @@ module.exports = KoaRouter;
   log: `// Logger middleware
 module.exports = function () {
     return async (ctx, next) => {
-        var start = new Date;
+        var start = new Date();
         await next();
         if (ctx.path === '/favicon.ico') {
             ctx.response.status = 200;
@@ -146,7 +116,7 @@ if ( allowEnvs.indexOf(env) < 0 ) {
   // Invalidation env. Load with a default value:development.
   env = 'development';
 }
-console.log('---> 当前环境变量: NODE_ENV='+env);
+console.log(' ---> 当前环境变量: NODE_ENV='+env);
 
 var db = require('./db_'+env);
 
@@ -162,61 +132,60 @@ module.exports = config;
 `,
   db_development: `var config = {
   Qiniu: {
-    ACCESS_KEY: '1lTt7-6RLPvQCOWU8d_BbRf9ce4C_FmtdLPfgENS',
-    SECRET_KEY: 'aSiJeim8Hqsw96v8wXzSsLWsPXwXFOdfaNCDqXkO',
-    bucket: 'development'
+    ACCESS_KEY: '',
+    SECRET_KEY: '',
+    bucket: ''
   },
   Mongo: {
-    url: 'mongodb://172.20.8.109:27017,172.20.8.110:27017/substation-admin-sys?replicaSet=rs0&readPreference=secondary&extendedOperators=true'
-    // url: 'mongodb://172.20.8.109:27017/substation-admin-sys'
+    url: 'mongodb://'
   },
   Redis: {
-    host: '172.20.7.108',
+    host: '127.0.0.1',
     port: 6379,
     db: 0,
     ttl: 60 * 60 * 24 * 7,   // expires in 7 days.
     cluster: [
       {
-        host: '172.20.8.109',
+        host: '127.0.0.1',
         port: 6379
       },
       {
-        host: '172.20.8.109',
-        port: 6380
-      },
-      {
-        host: '172.20.8.109',
-        port: 6381
-      },
-      {
-        host: '172.20.8.110',
+        host: '',
         port: 6379
       },
       {
-        host: '172.20.8.110',
-        port: 6380
+        host: '',
+        port: 6379
       },
       {
-        host: '172.20.8.110',
-        port: 6381
+        host: '',
+        port: 6379
+      },
+      {
+        host: '',
+        port: 6379
+      },
+      {
+        host: '',
+        port: 6379
       }
     ]
   },
   Mysql: {
-    host: '172.20.7.78',
-    user: 'root',
-    password: '123456',
-    database: 'substation-admin-sys',
+    host: '',
+    user: '',
+    password: '',
+    database: '',
     connectionLimit: 500,
     charset: 'UTF8_GENERAL_CI',
     connectTimeout: 10000,
     dateStrings: true,
     multipleStatements: true,
     master1: {
-      host: '172.20.7.78',
-      user: 'root',
-      password: '123456',
-      database: 'substation-admin-sys',
+      host: '',
+      user: '',
+      password: '',
+      database: '',
       connectionLimit: 500,
       charset: 'UTF8_GENERAL_CI',
       connectTimeout: 10000,
@@ -224,27 +193,16 @@ module.exports = config;
       multipleStatements: true
     },
     slave1: {
-      host: '172.20.7.79',
-      user: 'root',
-      password: '123456',
-      database: 'substation-admin-sys',
+      host: '',
+      user: '',
+      password: '',
+      database: '',
       connectionLimit: 500,
       charset: 'UTF8_GENERAL_CI',
       connectTimeout: 10000,
       dateStrings: true,
       multipleStatements: true
     }
-  },
-  JzezMiddle: {
-    url: 'http://172.20.7.87:8080/sap',
-    api_accout_query: '/substation/queryBalance',
-    api_bills: '/substation/querySerial',
-    api_bills_download: '/substation/exportSerial',
-    api_payment: '/pay/collectionApply',
-    api_urgent: '/order/fee',
-    api_calculate: '/order/calculate',
-    api_buy: '/order',
-    api_order_status: '/otms/shareOrder'
   }
 };
 
@@ -252,61 +210,60 @@ module.exports = config;
 `,
   db_staging: `var config = {
   Qiniu: {
-    ACCESS_KEY: '1lTt7-6RLPvQCOWU8d_BbRf9ce4C_FmtdLPfgENS',
-    SECRET_KEY: 'aSiJeim8Hqsw96v8wXzSsLWsPXwXFOdfaNCDqXkO',
-    bucket: 'development'
+    ACCESS_KEY: '',
+    SECRET_KEY: '',
+    bucket: ''
   },
   Mongo: {
-    url: 'mongodb://172.20.8.111:27017,172.20.8.112:27017/substation-admin-sys?replicaSet=rs0&readPreference=secondary&extendedOperators=true'
-    // url: 'mongodb://172.20.8.109:27017/substation-admin-sys'
+    url: 'mongodb://'
   },
   Redis: {
-    host: '172.20.7.108',
+    host: '',
     port: 6379,
     db: 0,
     ttl: 60 * 60 * 24 * 7,   // expires in 7 days.
     cluster: [
       {
-        host: '172.20.8.111',
+        host: '',
         port: 6379
       },
       {
-        host: '172.20.8.111',
-        port: 6380
-      },
-      {
-        host: '172.20.8.112',
+        host: '',
         port: 6379
       },
       {
-        host: '172.20.8.112',
-        port: 6380
-      },
-      {
-        host: '172.20.8.113',
+        host: '',
         port: 6379
       },
       {
-        host: '172.20.8.113',
-        port: 6380
+        host: '',
+        port: 6379
+      },
+      {
+        host: '',
+        port: 6379
+      },
+      {
+        host: '',
+        port: 6379
       }
     ]
   },
   Mysql: {
-    host: '172.20.7.78',
-    user: 'root',
-    password: '123456',
-    database: 'substation-admin-sys',
+    host: '',
+    user: '',
+    password: '',
+    database: '',
     connectionLimit: 500,
     charset: 'UTF8_GENERAL_CI',
     connectTimeout: 10000,
     dateStrings: true,
     multipleStatements: true,
     master1: {
-      host: '172.20.7.78',
-      user: 'root',
-      password: '123456',
-      database: 'substation-admin-sys',
+      host: '',
+      user: '',
+      password: '',
+      database: '',
       connectionLimit: 500,
       charset: 'UTF8_GENERAL_CI',
       connectTimeout: 10000,
@@ -314,27 +271,16 @@ module.exports = config;
       multipleStatements: true
     },
     slave1: {
-      host: '172.20.7.79',
-      user: 'root',
-      password: '123456',
-      database: 'substation-admin-sys',
+      host: '',
+      user: '',
+      password: '',
+      database: '',
       connectionLimit: 500,
       charset: 'UTF8_GENERAL_CI',
       connectTimeout: 10000,
       dateStrings: true,
       multipleStatements: true
     }
-  },
-  JzezMiddle: {
-    url: 'http://172.20.7.111:8081/sap',
-    api_accout_query: '/substation/queryBalance',
-    api_bills: '/substation/querySerial',
-    api_bills_download: '/substation/exportSerial',
-    api_payment: '/pay/collectionApply',
-    api_urgent: '/order/fee',
-    api_calculate: '/order/calculate',
-    api_buy: '/order',
-    api_order_status: '/otms/shareOrder'
   }
 };
 
@@ -342,60 +288,60 @@ module.exports = config;
 `,
   db_production: `var config = {
   Qiniu: {
-    ACCESS_KEY: 'TO_Hl06y-css7V5FXgdgyYsKC947a2WSmd8NrSNn',
-    SECRET_KEY: 'lfnS-5-h-pwCDmqYvQa2CSPH20dsvxD_-m-OCUhI',
-    bucket: 'sales'
+    ACCESS_KEY: '',
+    SECRET_KEY: '',
+    bucket: ''
   },
   Mongo: {
-    url: 'mongodb://172.20.9.83:27017,172.20.9.84:27017,172.20.9.85:27017,172.20.9.86:27017/substation-admin-sys?replicaSet=rs0&readPreference=secondary&extendedOperators=true'
+    url: 'mongodb://'
   },
   Redis: {
-    host: '172.20.7.108',
+    host: '',
     port: 6379,
     db: 0,
     ttl: 60 * 60 * 24 * 7,   // expires in 7 days.
     cluster: [
       {
-        host: '172.20.9.91',
+        host: '',
         port: 7001
       },
       {
-        host: '172.20.9.92',
+        host: '2',
         port: 7001
       },
       {
-        host: '172.20.9.93',
+        host: '',
         port: 7001
       },
       {
-        host: '172.20.9.94',
+        host: '',
         port: 7001
       },
       {
-        host: '172.20.9.95',
+        host: '',
         port: 7001
       },
       {
-        host: '172.20.9.96',
+        host: '',
         port: 7001
       }
     ]
   },
   Mysql: {
-    host: '172.20.7.108',
-    user: 'root',
-    password: 'jzez@2506',
-    database: 'substation-admin-sys',
+    host: '',
+    user: '',
+    password: '',
+    database: '',
     connectionLimit: 500,
     charset: 'UTF8_GENERAL_CI',
     connectTimeout: 10000,
     dateStrings: true,
     multipleStatements: true,
     master1: {
-      host: '172.20.7.78',
-      user: 'root',
-      password: '123456',
-      database: 'substation-admin-sys',
+      host: '',
+      user: '',
+      password: '',
+      database: '',
       connectionLimit: 500,
       charset: 'UTF8_GENERAL_CI',
       connectTimeout: 10000,
@@ -403,27 +349,16 @@ module.exports = config;
       multipleStatements: true
     },
     slave1: {
-      host: '172.20.7.79',
-      user: 'root',
-      password: '123456',
-      database: 'substation-admin-sys',
+      host: '',
+      user: '',
+      password: '',
+      database: '',
       connectionLimit: 500,
       charset: 'UTF8_GENERAL_CI',
       connectTimeout: 10000,
       dateStrings: true,
       multipleStatements: true
     }
-  },
-  JzezMiddle: {
-    url: 'http://172.20.9.23/sap',
-    api_accout_query: '/substation/queryBalance',
-    api_bills: '/substation/querySerial',
-    api_bills_download: '/substation/exportSerial',
-    api_payment: '/pay/collectionApply',
-    api_urgent: '/order/fee',
-    api_calculate: '/order/calculate',
-    api_buy: '/order',
-    api_order_status: '/otms/shareOrder'
   }
 };
 
@@ -522,7 +457,6 @@ module.exports = {
   redis: `var Redis = require('ioredis');
 var config = require('../conf/config');
 var mongo = require('./mongo');
-var Redlock = require('redlock');
 var security = require('../tools/security');
 
 /* Note:
@@ -535,75 +469,6 @@ if (!cluster) {
     scaleReads: 'slave' // 读写分离
   });
 }
-
-// 订阅实例 防止#Error: Connection in subscriber mode, only subscriber commands may be used
-// var sub;
-// if (!sub) sub = new Redis.Cluster(config.Redis.cluster, {
-//   scaleReads: 'slave' // 读写分离
-// });
-
-// var redlock;
-// if (!redlock) {
-//   redlock = new Redlock([cluster], {
-//     driftFactor: 0.01, // time in ms. the expected clock drift
-//     retryCount: 3, // the max number of times Redlock will attempt to lock a resource before erroring
-//     retryDelay: 200 // time in ms
-//   })
-// }
-
-// the maximum amount of time you want the key locked,
-// keeping in mind that you can extend the lock up until
-// the point when it expires
-// var lockTtl = 2000;
-
-// Redis 分布式锁key
-// function getLockKey(str) {
-//   return 'lock:' + security.generateMd5String(str);
-// }
-
-// 消费用户新增消息
-// function comsumerMessage(message) {
-//   var key = getLockKey(message);
-//   message = JSON.parse(message);
-
-//   redlock.lock(key, lockTtl, (err, lock) => {
-//     if (err) {
-//       console.log('---> 任务终止, Key: %s 已经被其它线程锁定', key);
-//     } else {
-//       mongo.insertDocumentNorepeatForPhone(mongo.CUSTOMERS, message, (data) => {
-//         if (data) {
-//           console.log('---> 重复的电话号码: %s', data);
-//         }
-//         console.log('---> Redis消息处理完成 ...');
-//         // 不要释放锁,这样其余线程就不会执行插入DB的操作,不用担心死锁, LockKey会在2秒后自动删除.
-//         // lock.unlock(function(err){
-//         //   console.log('---> Key: %s 已经被其它线程释放', key);
-//         // });
-//       });
-//     }
-//   });
-
-// }
-
-// // 订阅消息
-// sub.subscribe('CUSTOMERS', 'test', (err, count) => {
-//   // \`count\` represents the number of channels we are currently subscribed to.
-//   console.log('---> 已经订阅了 %s 个频道', count);
-// });
-
-// // 处理订阅消息
-// sub.on('message', (channel, message) => {
-//   console.log('Receive message %s from channel %s', message, channel);
-//   switch (channel) {
-//     case 'CUSTOMERS':
-//       comsumerMessage(message);
-//       break;
-
-//     default:
-//       console.log('---> 其它的消息: %', message);
-//       break;
-//   }
-// });
 
 module.exports = {
 
@@ -675,7 +540,6 @@ module.exports = {
   MongoDB common operation utils:
   - Insert One Document.
   - Insert Many Documents.
-  - Insert Document without repeat.Phone number is the specified key.
   - Find Document.
   - Find Specified Document.
   - Find All Documents with a Query Filter and Return results with page info.
@@ -701,118 +565,6 @@ MongoClient.connect(config.Mongo.url, (err, database) => {
 });
 
 module.exports = {
-    // collection_names.
-    /**
-     * 用户
-     */
-    USERS: 'users',
-    /**
-     * 员工
-     */
-    EMPLOYEES: 'employees',
-    /**
-     * 客户
-     */
-    CUSTOMERS: 'customers',
-    /**
-     * 产品
-     */
-    PRODUCTS: 'products',
-    /**
-     * SAP产品分类
-     */
-    CATEGORY: 'category',
-    /**
-     * 加急卡
-     */
-    URGENT: 'urgents',
-    /**
-     * 销售单
-     */
-    SALES: 'sales',
-    /**
-     * 采购单
-     */
-    SUB_SALES: 'sub_sales',
-    /**
-     * 备货单
-     */
-    BAK_SALES: 'bak_sales',
-    /**
-     * 流水号通用生成器
-     */
-    SERIAL_NUMBER: 'serial_number',
-    /**
-     * 销售单 - 计算一口价
-     */
-    QUOTES: 'quotes',
-    /**
-     * 备货
-     */
-    STOCKS: 'stocks',
-    /**
-     * 权限
-     */
-    PERMISSIONS: 'permissions',
-    /**
-     * 定制品
-     */
-    CUSTOM_PRODUCTS: 'custom_products',
-    /**
-     * 材料分类
-     */
-    MATERIAL_CATEGORY: 'material_category',
-    /**
-     * 供应商管理
-     */
-    SUPPLIER: 'supplier',
-    /**
-     * 施工报价分类
-     */
-    CONSTRUCTION_QUOTE_CATEGORY: 'construction_quote_category',
-    /**
-     * 施工报价
-     */
-    CONSTRUCTION_QUOTE: 'construction_quote',
-    /**
-     * 首页 - 培训
-     */
-    TRAINING: 'training',
-    /**
-     * 首页 - 通知
-     */
-    ANNOUNCEMENT: 'announcement',
-    /**
-     * 施工一口价
-     */
-    CONSTRUCTION_FIXED_PRICE: 'construction_fixed_price',
-    /**
-     * 材料报价模版
-     */
-    TPL_MATERIAL_QUOTE: 'tpl_material_quote',
-    /**
-     * 施工报价模版
-     */
-    TPL_CONSTRUCTION_QUOTE: 'tpl_construction_quote',
-    /**
-     * 调品规则
-     */
-    RULE_PRODUCT: 'rule_product',
-    /**
-     * 调品规则 - 分站自营价
-     */
-    RULE_PRODUCT_PRICE: 'rule_product_price',
-    /**
-     * 项目报价
-     */
-    PROJECT_QUOTE: 'project_quote',
-
-    // role name.
-    // ROLE_DESIGNER: 'designer',
-    // ROLE_MARKET: 'market',
-    // ROLE_SALES: 'sales',
-    // ROLE_ACCOUNTANT: 'accountant',
-
     /**
      * Get Mongo Database Instance.
      */
@@ -846,49 +598,6 @@ module.exports = {
             // console.log(result.ops.length); //ops Contains the documents inserted with added _id fields
             callback(err, result);
         });
-
-    },
-
-    // ---------------------------------------------------------------------------
-    /**
-     * Insert Document without repeat.Phone number is the specified key.
-     */
-    insertDocumentNorepeatForPhone: (collectionName, doc, callback) => {
-
-        var collection = db.collection(collectionName);
-        collection.update({ Phone2: doc.Phone2, station: doc.station }, { $setOnInsert: doc }, { upsert: true }, (err, res) => {
-            if (res.result.upserted == null) {
-                // console.log('---> 重复数据不录入! ', doc);
-                callback(doc.Phone2);
-            } else {
-                // console.log('---> 新录入数据:', doc);
-                callback(null);
-            }
-
-        });
-
-        // var bulk = db.collection(collectionName).initializeUnorderedBulkOp()
-        // bulk.find({name: doc.name, phone: doc.phone})
-        //     .upsert()
-        //     .replaceOne(doc);
-
-        // deprecate 防止数据重复而采用的让多线程错峰执行,已经改由Redis分布式锁实现.
-        // 随机超时时间,防止多线程带来的数据重复插入问题 
-        // var timeout = Math.random()*1500;
-        // setTimeout(function() {
-        //   bulk.execute();
-        // }, timeout);
-        // bulk.execute(function(err, result){
-        //   console.log(result.nMatched);
-        //   // console.log('---> s :',bulk.s);
-        //   if (bulk.s.bulkResult.nMatched == 1) {
-        //     console.log('---> 重复数据: ',doc);
-        //   }
-
-        // });
-
-        // callback();
-        // console.log('---> result : ',bulk.s.bulkResult);
 
     },
 
@@ -1228,38 +937,38 @@ var router = new base({
     prefix: '/$option'
 });
 
-router.get('/', function* () {
+router.get('/', async ctx => {
     var doc = {};
     var data = this.query;
     var params = {};
     params.pageParam = { page: data.page, size: data.size };
     params.doc = doc;
-    this.body = { code: 200, data: yield dao.list(params) };
+    ctx.body = { code: 200, data: await dao.list(params) };
 });
 
-router.post('/', function* () {
-    var user = yield router.getUserInfo(this.cookies.get('token'));
+router.post('/', async ctx => {
+    var user = await router.getUserInfo(this.cookies.get('token'));
     var data = this.request.body;
     data.createAt = new Date();
-    yield dao.create(data);
-    this.body = { code: 200, msg: 'ok' };
+    await dao.create(data);
+    ctx.body = { code: 200, msg: 'ok' };
 });
 
-router.put('/', function* () {
-    var user = yield router.getUserInfo(this.cookies.get('token'));
+router.put('/', async ctx => {
+    var user = await router.getUserInfo(this.cookies.get('token'));
     var data = this.request.body;
-    yield dao.update(data);
-    this.body = { code: 200, msg: 'ok' };
+    await dao.update(data);
+    ctx.body = { code: 200, msg: 'ok' };
 });
 
-router.delete('/', function* () {
+router.delete('/', async ctx => {
     var id = this.query._id;
-    yield dao.delete(id);
-    this.body = { code: 200, msg: 'ok' };
+    await dao.delete(id);
+    ctx.body = { code: 200, msg: 'ok' };
 });
-router.get('/detail', function* () {
-    var doc = yield dao.get(this.query._id);
-    this.body = { code: 200, data: doc };
+router.get('/detail', async ctx => {
+    var doc = await dao.get(this.query._id);
+    ctx.body = { code: 200, data: doc };
 });
 
 module.exports = router;`,
@@ -1268,45 +977,62 @@ var ObjectId = require('mongodb').ObjectID;
 
 module.exports = {
     list: (params) => {
-        return (done) => {
-            mongo.findDocuments('$option', params, (results) => {
-                done(null, results);
+        return new Promise(
+            (resolve, reject) => {
+                mongo.findDocuments('$option', params, (results) => {
+                    resolve(results);
+                });
             });
-        }
     },
     get: (param) => {
-        return (done) => {
-            mongo.findDocument('$option', param, (doc) => {
-                done(null, doc);
+        return new Promise(
+            (resolve, reject) => {
+                mongo.findDocument('$option', param, (doc) => {
+                    resolve(doc);
+                });
             });
-        }
     },
     create: (doc) => {
-        return (done) => {
-            mongo.insertDocument('$option', doc, (err, result) => {
-                if (err) done(new Error("系统异常，新增失败!"), null);
-                done(null, null);
+        return new Promise(
+            (resolve, reject) => {
+                mongo.insertDocument('$option', doc, (err, result) => {
+                    if (err) reject("系统异常，新增失败!");
+                    resolve(null);
+                });
             });
-        }
     },
     update: (doc) => {
-        return (done) => {
-            mongo.updateDocument('$option', { _id: new ObjectId(doc._id) }, doc, (err, result) => {
-                if (err != null || result.result.n == 0) {
-                    done(new Error("系统异常,更新失败!"), null);
-                } else {
-                    done(null, null);
-                }
+        return new Promise(
+            (resolve, reject) => {
+                mongo.updateDocument('$option', { _id: new ObjectId(doc._id) }, doc, (err, result) => {
+                    if (err != null || result.result.n == 0) {
+                        reject("系统异常,更新失败!");
+                    } else {
+                        resolve(null);
+                    }
+                });
             });
-        }
     },
     delete: (id) => {
-        return (done) => {
-            mongo.removeDocument('$option', { _id: new ObjectId(id) }, (err, res) => {
-                if (err) done(new Error("系统异常,删除失败!"), null);
-                done(null, null);
+        return new Promise(
+            (resolve, reject) => {
+                mongo.removeDocument('$option', { _id: new ObjectId(id) }, (err, res) => {
+                    if (err) reject("系统异常,删除失败!");
+                    resolve(null);
+                });
             });
-        }
     }
-}`
+}`,
+  tools: `var crypto = require('crypto');
+
+module.exports = {
+  generateSha256String: function (str) {
+    var sha256 = crypto.createHash('sha256');
+    return sha256.update(str, 'utf-8').digest('hex');
+  },
+  generateMd5String: function (str) {
+    var md5 = crypto.createHash('md5');
+    return md5.update(str).digest('hex');
+  }
+};`
 }

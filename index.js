@@ -5,15 +5,14 @@ const fs = require('fs'),
     pwd = process.cwd(),
     operation = process.argv[2],
     option = process.argv[3];
-console.log(pwd);
 var pkg = require(path.join(pwd, 'package.json'));
 
 switch (operation) {
     case 'init':
         var g = init();
-        g.next();
-        g.next();
-        g.next();
+        while (!g.next().done) {
+            g.next();
+        }
         break;
     case 'new':
         if (!option) {
@@ -21,11 +20,22 @@ switch (operation) {
             break;
         }
         var g = new_module(option);
-        g.next();
-        g.next();
+        while (!g.next().done) {
+            g.next();
+        }
+        break;
+    case 'delete':
+        if (!option) {
+            console.error('please tell me the module name!');
+            break;
+        }
+        var g = delete_module(option);
+        while (!g.next().done) {
+            g.next();
+        }
         break;
     default:
-        console.log(' Usage: web-zero operation [init | new] option [module_name]');
+        console.log(' Usage: web-zero operation [init | new | delete] option [module_name]');
         break;
 }
 
@@ -46,6 +56,26 @@ function* new_module(option) {
     yield new_dao(option);
 }
 
+/**
+ * delete route and dao files.
+ */
+function* delete_module(option) {
+    yield del_route(option);
+    yield del_dao(option);
+}
+
+function del_route(option) {
+    fs.unlink(path.join(pwd, 'routes', option + '.js'), (err) => { // asynchronous delete
+        console.log(` ---> Delete File routes/${option}.js success...`);
+    });
+}
+
+function del_dao(option) {
+    fs.unlink(path.join(pwd, 'dao', option + '.js'), (err) => { // asynchronous delete
+        console.log(` ---> Delete File dao/${option}.js success...`);
+    });
+}
+
 function new_route(option) {
     fs.writeFile(path.join(pwd, 'routes', option + '.js'), tpl.base_router.replace(/\$option/g, option), (err) => {
         if (err)
@@ -55,7 +85,7 @@ function new_route(option) {
 }
 
 function new_dao(option) {
-    fs.writeFile(path.join(pwd, 'dao', option + '.js'), tpl.base_dao.replace(/\$option/g, option.toUpperCase()), (err) => {
+    fs.writeFile(path.join(pwd, 'dao', option + '.js'), tpl.base_dao.replace(/\$option/g, option), (err) => {
         if (err)
             throw err;
         console.log(` ---> Create File dao/${option}.js success...`);
@@ -88,6 +118,12 @@ function init_dir() {
         if (err && err.code !== 'EEXIST')
             throw err;
         console.log(' ---> Create Directory conf success...');
+    });
+
+    fs.mkdir(path.join(pwd, 'tools'), (err) => {
+        if (err && err.code !== 'EEXIST')
+            throw err;
+        console.log(' ---> Create Directory tools success...');
     });
 }
 
@@ -172,6 +208,12 @@ function init_file() {
             throw err;
         console.log(' ---> Create File dao/mysql.js success...');
     });
+
+    fs.writeFile(path.join(pwd, 'tools', 'security.js'), tpl.tools, (err) => {
+        if (err)
+            throw err;
+        console.log(' ---> Create File tools/security.js success...');
+    });
 }
 
 /**
@@ -179,20 +221,19 @@ function init_file() {
  */
 function init_dependencies() {
     pkg.dependencies = {
-        "expect.js": "^0.3.1",
         "formidable": "^1.0.17",
         "ioredis": "^2.3.0",
         "koa": "^2.0.0",
         "koa-bodyparser": "^3.2.0",
         "koa-exception": "^2.0.0",
         "koa-router": "^7.0.1",
-        "moment": "^2.15.1",
         "mongodb": "^2.2.8",
         "mysql": "^2.11.1",
         "qiniu": "^6.1.11",
-        "redlock": "^2.0.1",
         "superagent": "^2.1.0"
     }
+
+    pkg['scripts']['start'] = 'node --harmony-async-await app.js';
 
     fs.writeFile(path.join(pwd, 'package.json'), JSON.stringify(pkg, null, 4), (err) => {
         if (err)
