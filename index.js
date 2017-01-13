@@ -146,6 +146,12 @@ function init_file() {
         console.log(' ---> Create File routes/base.js success...');
     });
 
+    fs.writeFile(path.join(pwd, 'routes', 'index.js'), tpl.index, (err) => {
+        if (err)
+            throw err;
+        console.log(' ---> Create File routes/index.js success...');
+    });
+
     /**
     * create middleware/log.js
     */

@@ -95,6 +95,13 @@ KoaRouter.prototype.formParse = function (ctx) {
 
 module.exports = KoaRouter;
 `,
+  index: `var router = require('koa-router')();
+
+router.get('/', async ctx => {
+    ctx.body = '<h1>Welcome to web-zero!</h1>';
+});
+
+module.exports = router;`,
   log: `// Logger middleware
 module.exports = function () {
     return async (ctx, next) => {
