@@ -4,9 +4,14 @@ const fs = require('fs'),
     tpl = require(path.join(__dirname, 'template', 'tpl.js')),
     pwd = process.cwd(),
     operation = process.argv[2],
-    option = process.argv[3];
-var pkg = require(path.join(pwd, 'package.json'));
+    option = process.argv[3],
+    project_name = path.basename(pwd);
+var pkg = require(path.join(__dirname, 'package.example.json'));
 
+if (!operation || (operation !== 'init' && !option)) {
+    usage_info();
+    process.exit(0);
+}
 switch (operation) {
     case 'init':
         var g = init();
@@ -15,28 +20,25 @@ switch (operation) {
         }
         break;
     case 'new':
-        if (!option) {
-            console.error('please tell me the module name!');
-            break;
-        }
         var g = new_module(option);
         while (!g.next().done) {
             g.next();
         }
         break;
     case 'delete':
-        if (!option) {
-            console.error('please tell me the module name!');
-            break;
-        }
         var g = delete_module(option);
         while (!g.next().done) {
             g.next();
         }
         break;
     default:
-        console.log(' Usage: web-zero operation [init | new | delete] option [module_name]');
+        usage();
         break;
+}
+
+function usage_info() {
+    const usage = `Usage: web-zero operation [init | new | delete] option [module_name]\n\nExample:\n\t web-zero init \t\t Create a api project named current dir.\n\t web-zero new users \t Create routes/users.js and dao/users.js files.\n\t web-zero delete users \t Delete routes/users.js and dao/users.js files.`;
+    console.log(usage);
 }
 
 /**
@@ -238,8 +240,7 @@ function init_dependencies() {
         "qiniu": "^6.1.11",
         "superagent": "^2.1.0"
     }
-
-    pkg['scripts']['start'] = 'node --harmony-async-await app.js';
+    pkg.name = project_name;
 
     fs.writeFile(path.join(pwd, 'package.json'), JSON.stringify(pkg, null, 4), (err) => {
         if (err)
