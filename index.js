@@ -139,15 +139,6 @@ function init_file() {
         console.log(' ---> Create File app.js success...');
     });
 
-    /**
-     * create routes/base.js
-     */
-    fs.writeFile(path.join(pwd, 'routes', 'base.js'), tpl.base, (err) => {
-        if (err)
-            throw err;
-        console.log(' ---> Create File routes/base.js success...');
-    });
-
     fs.writeFile(path.join(pwd, 'routes', 'index.js'), tpl.index, (err) => {
         if (err)
             throw err;
@@ -161,6 +152,11 @@ function init_file() {
         if (err)
             throw err;
         console.log(' ---> Create File middleware/log.js success...');
+    });
+    fs.writeFile(path.join(pwd, 'middleware', 'koa-router-ext.js'), tpl.koa_router_ext, (err) => {
+        if (err)
+            throw err;
+        console.log(' ---> Create File middleware/koa-router-ext.js success...');
     });
 
     /**
@@ -229,12 +225,12 @@ function init_file() {
  */
 function init_dependencies() {
     pkg.dependencies = {
-        "formidable": "^1.0.17",
         "ioredis": "^2.3.0",
         "koa": "^2.0.0",
         "koa-bodyparser": "^3.2.0",
         "koa-exception": "^2.0.0",
         "koa-router": "^7.0.1",
+        "koa-router-form-parser": "0.0.1",
         "mongodb": "^2.2.8",
         "mysql": "^2.11.1",
         "qiniu": "^6.1.11",

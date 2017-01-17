@@ -1,13 +1,15 @@
 module.exports = {
   app: `"use strict";
-var Koa = require('koa');
-var bodyParser = require('koa-bodyparser');
-var ex = require('koa-exception');
-var logger = require('./middleware/log');
-var fs = require('fs');
-const path = require('path');
+const Koa = require('koa'),
+  bodyParser = require('koa-bodyparser'),
+  ex = require('koa-exception'),
+  logger = require('./middleware/log'),
+  fs = require('fs'),
+  path = require('path'),
+  formParser = require('koa-router-form-parser'),
+  routerExt = require('./middleware/koa-router-ext'),
+  app = new Koa();
 
-const app = new Koa();
 // Cross-origin
 app.use(async (ctx, next) => {
   ctx.set('Access-Control-Allow-Origin', '*');
@@ -24,17 +26,16 @@ app.use(async (ctx, next) => {
 
 // Logger middleware
 app.use(logger());
-// 异常统一处理器: 捕获业务代码抛出的异常,用户也可自己手动捕获异常,手动捕获后将不会被该处理器处理.
 app.use(ex('CN'));
 app.use(bodyParser());
+app.use(formParser());
+app.use(routerExt());
 
 const routerDir = path.join(__dirname, 'routes');
-// 读取路由文件
 var readFiles = () => {
   return new Promise((resolve, reject) => {
     fs.readdir(routerDir, (err, files) => {
       resolve(files.filter((f) => {
-        // 过滤出 .js文件
         return f.endsWith('.js') && f != 'base.js';
       }))
     });
@@ -47,7 +48,7 @@ var readFiles = () => {
     try {
       app.use(require(path.join(routerDir, file)).routes());
     } catch (error) {
-      console.error(' ---> 启动失败，似乎数据库配置有问题哦~');
+      console.error(' ---> Start Failure, please check the config files.');
       process.exit(0);
     }
   }
@@ -57,43 +58,6 @@ var port = 3000;
 app.listen(port, function () {
   console.log(\` ---> Server running on port: \${port}\`);
 });
-`,
-  base: `var KoaRouter = require('koa-router');
-var formidable = require('formidable');
-
-KoaRouter.prototype.getUserInfo = (token) => {
-  return new Promise((resovle, reject) => {
-    if (!token) {
-      var err = new Error('您还未登录!');
-      err.name = "token_error";
-      reject(err);
-    }
-    // Login userinfo
-    resovle({});
-  });
-};
-
-/**
- *  上传文件表单转换.
- *  返回文件路径(如果是临时文件，用完记得删除文件)
- */
-KoaRouter.prototype.formParse = function (ctx) {
-  return new Promise((resovle, reject) => {
-    var form = new formidable.IncomingForm();
-    //设置上传目录
-    form.uploadDir = '/tmp/';
-    form.keepExtensions = true;
-    form.parse(ctx.req, function (err, fields, files) {
-      if (err) {
-        reject(err);
-      }
-      var path = files.uploadFile.path;
-      resovle(path);
-    });
-  });
-}
-
-module.exports = KoaRouter;
 `,
   index: `var router = require('koa-router')();
 
@@ -114,6 +78,41 @@ module.exports = function () {
         }
         var ms = new Date() - start;
         console.log(\`\x1b[32m \${new Date().toLocaleDateString()} \${new Date().toLocaleTimeString()} - \x1b[1m \${ctx.method} \${ctx.status} \x1b[0m \x1b[36m \${ctx.url} \x1b[0m - \x1b[33m \${ms} ms \x1b[0m\`);
+    }
+}`,
+koa_router_ext: `const redis = require('../dao/redis'),
+    mongo = require('../dao/mongo'),
+    config = require('../conf/config');
+
+module.exports = () => {
+    return async (ctx, next) => {
+        ctx.getUserInfo = () => {
+            return new Promise((resovle, reject) => {
+                const token = ctx.cookies.get('token');
+                if (!token) {
+                    var err = new Error('您还未登录!');
+                    err.name = "token_error";
+                    reject(err);
+                }
+                redis.get(redis.generateKey(token), (err, value) => {
+                    if (err || value == null) {
+                        if (err) console.error(\`---> Redis 获取 Token异常: \${err} \n\t 将从Mongodb中获取...\`);
+                        // get userinfo from mongodb by token string.
+                        mongo.findDocument('users', { token: token, last_login: { $gte: new Date(new Date().getTime() - config.Redis.ttl * 1000) } }, (doc) => {
+                            if (!doc) {
+                                var err = new Error('登录信息已过期,请先登录!');
+                                err.name = "token_error";
+                                reject(err);
+                            }
+                            resovle(doc);
+                        });
+                    } else {
+                        resovle(JSON.parse(value));
+                    }
+                });
+            });
+        };
+        await next();
     }
 }`,
   config: `var env = process.env.NODE_ENV;
@@ -560,8 +559,8 @@ module.exports = {
   - Remove One Document.
   - Remove Many Document.
 */
-var config = require('../conf/config');
-var MongoClient = require('mongodb').MongoClient;
+const config = require('../conf/config'),
+    MongoClient = require('mongodb').MongoClient;
 var db;
 
 // MongoClient connection pooling.
@@ -580,13 +579,14 @@ module.exports = {
     },
     /** 
      * Insert one document.
+     * 
+     * @param {String} collectionName Mongodb collection name.
+     * @param {Object} doc Inserted document.
+     * @param {Function} callback callback(err,result).
     */
     insertDocument: (collectionName, doc, callback) => {
         var collection = db.collection(collectionName);
         collection.insertOne(doc, (err, result) => {
-            if (err) {
-                console.error('---------------- Mongodb 保存单个失败:', err);
-            }
             callback(err, result);
         });
     },
@@ -594,13 +594,14 @@ module.exports = {
     // ---------------------------------------------------------------------------
     /**
      * Insert many documents.
+     * 
+     * @param {String} collectionName Mongodb collection name.
+     * @param {Array} docs Inserted documents.
+     * @param {Function} callback callback(err,result).
      */
     insertDocuments: (collectionName, docs, callback) => {
         var collection = db.collection(collectionName);
         collection.insertMany(docs, (err, result) => {
-            if (err) {
-                console.error('---------------- Mongodb 保存多个文档失败:', err);
-            }
             // console.log(result.result.n);   // result Contains the result document from MongoDB
             // console.log(result.ops.length); //ops Contains the documents inserted with added _id fields
             callback(err, result);
@@ -611,6 +612,11 @@ module.exports = {
     // ---------------------------------------------------------------------------
     /**
      * Upsert document.
+     * 
+     * @param {String} collectionName Mongodb collection name.
+     * @param {Object} queryDoc Query document.
+     * @param {Object} upsertDoc Upserted document.
+     * @param {Function} callback callback(err,result).
      */
     upsertDocument: (collectionName, queryDoc, upsertDoc, callback) => {
         var collection = db.collection(collectionName);
@@ -621,6 +627,10 @@ module.exports = {
 
     /**
      * Find One Document.
+     * 
+     * @param {String} collectionName Mongodb collection name.
+     * @param {Object} queryDoc Query document.
+     * @param {Function} callback callback(doc).
      */
     findDocument: (collectionName, queryDoc, callback) => {
         var collection = db.collection(collectionName);
@@ -631,6 +641,11 @@ module.exports = {
     // ---------------------------------------------------------------------------
     /**
      * Find Specified Document.
+     * 
+     * @param {String} collectionName Mongodb collection name.
+     * @param {Object} queryDoc Query document.
+     * @param {Object} specifiedDoc Specified returned document. For example: {name: 1, passwd:0} name returned and passwd not.
+     * @param {Function} callback callback(doc).
      */
     findSpecifiedDocument: (collectionName, queryDoc, specifiedDoc, callback) => {
         var collection = db.collection(collectionName);
@@ -642,36 +657,29 @@ module.exports = {
     // ---------------------------------------------------------------------------
     /**
      * Find All Documents with a Query Filter and Return results with page info.
+     * 
+     * @param {String} collectionName Mongodb collection name.
+     * @param {Object} queryDoc Query document.
+     * @param {Function} callback callback(results).
      */
     findDocuments: (collectionName, queryDoc, callback) => {
-        /**
-        queryDoc:
-        {
-          doc:{'age': 18, 'name': /brain/},  # name = new RegExp(name); Note:模糊查询,需要使用正则,而不是简单的 / 字符串拼接
-          pageParam:{'page':1, 'size': 20}
-        }
-        */
-        var pageParam = queryDoc.pageParam == null ? new Object() : queryDoc.pageParam;
+        var pageParam = queryDoc.pageParam == null ? {} : queryDoc.pageParam;
         var page = pageParam.page == null ? 1 : parseInt(pageParam.page);
         var size = pageParam.size == null ? 20 : parseInt(pageParam.size);
-        size = size > 200 ? 200 : size; // 接口保护,每次最多允许获取200条数据
+        size = size > 200 ? 200 : size; // API speed limit for 200 records/times
         var skip = (page - 1) * size;
         var doc = queryDoc.doc; // can be an empty object.
         var collection = db.collection(collectionName);
-
-        // 默认按照创建时间降序排列
+        // desc by create time.
         collection.find(doc)
             .sort({ createAt: -1 })
             .skip(skip)
             .limit(size)
             .toArray(
             (err, docs) => {
-                if (err) {
-                    console.error('---------------- Mongodb 查询失败 :', err);
-                }
                 collection.count(doc,
                     (err, count) => {
-                        var results = new Object();
+                        var results = {};
                         results.docs = docs;
                         results.count = count;
                         callback(results);
@@ -682,6 +690,10 @@ module.exports = {
     // ---------------------------------------------------------------------------
     /**
      * Find All Documents with a Query Filter and without page query.
+     * 
+     * @param {String} collectionName Mongodb collection name.
+     * @param {Object} queryDoc Query document.
+     * @param {Function} callback callback(docs).
      */
     findAllDocuments: (collectionName, queryDoc, callback) => {
         var collection = db.collection(collectionName);
@@ -693,6 +705,11 @@ module.exports = {
     // ---------------------------------------------------------------------------
     /**
      * Find All Documents with a sorted document and a Query Filter and without page query.
+     * 
+     * @param {String} collectionName Mongodb collection name.
+     * @param {Object} queryDoc Query document.
+     * @param {Object} sortDoc Sort document.
+     * @param {Function} callback callback(docs).
      */
     findAllDocumentsSorted: (collectionName, queryDoc, sortDoc, callback) => {
         var collection = db.collection(collectionName);
@@ -705,6 +722,11 @@ module.exports = {
     // ---------------------------------------------------------------------------
     /**
      * Find All Specified Documents with a Query Filter and without page query.
+     * 
+     * @param {String} collectionName Mongodb collection name.
+     * @param {Object} queryDoc Query document.
+     * @param {Object} specifiedDoc Specified returned document. For example: {name: 1, passwd:0} name returned and passwd not.
+     * @param {Function} callback callback(doc).
      */
     findAllSpecifiedDocuments: (collectionName, queryDoc, specifiedDoc, callback) => {
         var collection = db.collection(collectionName);
@@ -716,12 +738,17 @@ module.exports = {
     // ---------------------------------------------------------------------------
     /**
      * Find Specified Documents with a Query Filter and page query.
+     * 
+     * @param {String} collectionName Mongodb collection name.
+     * @param {Object} queryDoc Query document.
+     * @param {Object} specifiedDoc Specified returned document. For example: {name: 1, passwd:0} name returned and passwd not.
+     * @param {Function} callback callback(doc).
      */
     findSpecifiedDocuments: (collectionName, queryDoc, specifiedDoc, callback) => {
-        var pageParam = queryDoc.pageParam == null ? new Object() : queryDoc.pageParam;
+        var pageParam = queryDoc.pageParam == null ? {} : queryDoc.pageParam;
         var page = pageParam.page == null ? 1 : parseInt(pageParam.page);
         var size = pageParam.size == null ? 20 : parseInt(pageParam.size);
-        size = size > 200 ? 200 : size; // 接口保护,每次最多允许获取200条数据
+        size = size > 200 ? 200 : size; // API speed limit for 200 records/times
         var skip = (page - 1) * size;
         var doc = queryDoc.doc; // can be an empty object.
         var collection = db.collection(collectionName);
@@ -732,12 +759,9 @@ module.exports = {
             .limit(size)
             .toArray(
             (err, docs) => {
-                if (err) {
-                    console.error('---------------- Mongodb 查询失败 :', err);
-                }
                 collection.count(doc,
                     (err, count) => {
-                        var results = new Object();
+                        var results = {};
                         results.docs = docs;
                         results.count = count;
                         callback(results);
@@ -747,12 +771,18 @@ module.exports = {
     // ---------------------------------------------------------------------------
     /**
      * Find Specified Sorted Documents with a Query Filter and page query.
+     * 
+     * @param {String} collectionName Mongodb collection name.
+     * @param {Object} queryDoc Query document.
+     * @param {Object} specifiedDoc Specified returned document. For example: {name: 1, passwd:0} name returned and passwd not.
+     * @param {Object} sortDoc Sort document.
+     * @param {Function} callback callback(results).
      */
     findSpecifiedSortedDocuments: (collectionName, queryDoc, specifiedDoc, sortDoc, callback) => {
-        var pageParam = queryDoc.pageParam == null ? new Object() : queryDoc.pageParam;
+        var pageParam = queryDoc.pageParam == null ? {} : queryDoc.pageParam;
         var page = pageParam.page == null ? 1 : parseInt(pageParam.page);
         var size = pageParam.size == null ? 20 : parseInt(pageParam.size);
-        size = size > 200 ? 200 : size; // 接口保护,每次最多允许获取200条数据
+        size = size > 200 ? 200 : size; // API speed limit for 200 records/times
         var skip = (page - 1) * size;
         var doc = queryDoc.doc; // can be an empty object.
         var collection = db.collection(collectionName);
@@ -763,12 +793,9 @@ module.exports = {
             .limit(size)
             .toArray(
             (err, docs) => {
-                if (err) {
-                    console.error('---------------- Mongodb 查询失败 :', err);
-                }
                 collection.count(doc,
                     (err, count) => {
-                        var results = new Object();
+                        var results = {};
                         results.docs = docs;
                         results.count = count;
                         callback(results);
@@ -778,6 +805,12 @@ module.exports = {
     // ---------------------------------------------------------------------------
     /**
      * Find All Specified Sorted Documents without page Filter query.
+     * 
+     * @param {String} collectionName Mongodb collection name.
+     * @param {Object} queryDoc Query document.
+     * @param {Object} specifiedDoc Specified returned document. For example: {name: 1, passwd:0} name returned and passwd not.
+     * @param {Object} sortDoc Sort document.
+     * @param {Function} callback callback(docs).
      */
     findAllSpecifiedSortedDocuments: (collectionName, queryDoc, specifiedDoc, sortDoc, callback) => {
         var collection = db.collection(collectionName);
@@ -785,15 +818,16 @@ module.exports = {
             .sort(sortDoc)
             .toArray(
             (err, docs) => {
-                if (err) {
-                    console.error('---------------- Mongodb 查询失败 :', err);
-                }
                 callback(docs);
             });
     },
     // ---------------------------------------------------------------------------
     /**
      * Find Doc count.
+     * 
+     * @param {String} collectionName Mongodb collection name.
+     * @param {Object} queryDoc Query document.
+     * @param {Function} callback callback(results).
      */
     findCount: (collectionName, queryDoc, callback) => {
         var collection = db.collection(collectionName);
@@ -804,6 +838,11 @@ module.exports = {
     // ---------------------------------------------------------------------------
     /**
      * Update one document.
+     * 
+     * @param {String} collectionName Mongodb collection name.
+     * @param {Object} conditionDoc Update condition document.
+     * @param {Object} sortDoc Sort document.
+     * @param {Function} callback callback(err,result).
      */
     updateDocument: (collectionName, conditionDoc, updatedDoc, callback) => {
         var collection = db.collection(collectionName);
@@ -817,15 +856,17 @@ module.exports = {
             update_doc = { $set: updatedDoc };
         }
         collection.updateOne(conditionDoc, update_doc, (err, result) => {
-            if (err) {
-                console.error('---------------- Mongodb 更新单个文档失败:', err);
-            }
             callback(err, result);
         });
     },
     // ---------------------------------------------------------------------------
     /**
      * Update many documents.
+     * 
+     * @param {String} collectionName Mongodb collection name.
+     * @param {Object} conditionDoc Update condition document.
+     * @param {Object} updatedDoc Updated document.
+     * @param {Function} callback callback(err,result).
      */
     updateDocuments: (collectionName, conditionDoc, updatedDoc, callback) => {
         updatedDoc.updateAt = new Date();
@@ -833,9 +874,6 @@ module.exports = {
         delete updatedDoc._id; // don't update _id & createAt field.
         delete updatedDoc.createAt;
         collection.updateMany(conditionDoc, { $set: updatedDoc }, (err, result) => {
-            if (err) {
-                console.error('---------------- Mongodb 更新多个文档失败:', err);
-            }
             callback(err, result);
         });
     },
@@ -846,39 +884,44 @@ module.exports = {
      * The {new: true} option will return the updated document when boolean true. 
      * If set to false, it will return the old document before update. 
      * 
+     * 
+     * @param {String} collectionName Mongodb collection name.
+     * @param {Object} queryDoc Query document.
+     * @param {Object} sortDoc Sort document.
+     * @param {Object} updateDoc Update document.
+     * @param {Function} callback callback(err,result).
      */
     FindAndModifyDocument: (collectionName, queryDoc, sortDoc, updateDoc, callback) => {
         var collection = db.collection(collectionName);
         collection.findAndModify(queryDoc, sortDoc, updateDoc, { new: true }, (err, result) => {
-            if (err) {
-                console.error('---> FindAndModify Error: %s', err);
-            }
             callback(err, result);
         });
     },
     // ---------------------------------------------------------------------------
     /**
      * Remove one document.
+     * 
+     * @param {String} collectionName Mongodb collection name.
+     * @param {Object} doc Remove document.
+     * @param {Function} callback callback(err,result).
      */
     removeDocument: (collectionName, doc, callback) => {
         var collection = db.collection(collectionName);
         collection.deleteOne(doc, (err, result) => {
-            if (err) {
-                console.error('---------------- Mongodb 删除单个文档失败:', err);
-            }
             callback(err, result);
         });
     },
     // ---------------------------------------------------------------------------
     /**
      * Remove Many documents.
+     * 
+     * @param {String} collectionName Mongodb collection name.
+     * @param {Object} doc Remove document.
+     * @param {Function} callback callback(err,result).
      */
     removeDocuments: (collectionName, doc, callback) => {
         var collection = db.collection(collectionName);
         collection.deleteMany(doc, (err, result) => {
-            if (err) {
-                console.error('---------------- Mongodb 删除多个文档失败:', err);
-            }
             callback(err, result);
         });
     }
