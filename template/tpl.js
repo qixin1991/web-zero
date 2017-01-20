@@ -981,11 +981,11 @@ module.exports = {
   }
 };
 `,
-  base_router: `var base = require('./base');
-var dao = require('../dao/$option');
-var router = new base({
-    prefix: '/$option'
-});
+  base_router: `var KoaRouter = require('./base'),
+    dao = require('../dao/$option'),
+    router = new KoaRouter({
+        prefix: '/$option'
+    });
 
 router.get('/', async ctx => {
     var doc = {};
