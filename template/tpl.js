@@ -989,7 +989,7 @@ var router = new base({
 
 router.get('/', async ctx => {
     var doc = {};
-    var data = this.query;
+    var data = ctx.query;
     var params = {};
     params.pageParam = { page: data.page, size: data.size };
     params.doc = doc;
@@ -997,27 +997,25 @@ router.get('/', async ctx => {
 });
 
 router.post('/', async ctx => {
-    var user = await router.getUserInfo(this.cookies.get('token'));
-    var data = this.request.body;
+    var data = ctx.request.body;
     data.createAt = new Date();
     await dao.create(data);
     ctx.body = { code: 200, msg: 'ok' };
 });
 
 router.put('/', async ctx => {
-    var user = await router.getUserInfo(this.cookies.get('token'));
-    var data = this.request.body;
+    var data = ctx.request.body;
     await dao.update(data);
     ctx.body = { code: 200, msg: 'ok' };
 });
 
-router.delete('/', async ctx => {
-    var id = this.query._id;
+router.delete('/:id', async ctx => {
+    var id = ctx.params.id;
     await dao.delete(id);
     ctx.body = { code: 200, msg: 'ok' };
 });
-router.get('/detail', async ctx => {
-    var doc = await dao.get(this.query._id);
+router.get('/:id', async ctx => {
+    var doc = await dao.get(this.params.id);
     ctx.body = { code: 200, data: doc };
 });
 
