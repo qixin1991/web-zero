@@ -6,16 +6,12 @@ module.exports = `const KoaRouter = require('./base'),
 
 router.get('/', async ctx => {
     var doc = {};
-    var data = ctx.query;
-    var params = {};
-    params.pageParam = { page: data.page, size: data.size };
-    params.doc = doc;
+    var params = ctx.query;
     ctx.body = { code: 200, data: await dao.list(params) };
 });
 
 router.post('/', async ctx => {
     var data = ctx.request.body;
-    data.createAt = new Date();
     await dao.create(data);
     ctx.body = { code: 200, msg: 'ok' };
 });

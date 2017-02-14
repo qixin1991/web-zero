@@ -44,6 +44,7 @@ module.exports = {
     */
     insertDocument: (collectionName, doc, callback) => {
         var collection = db.collection(collectionName);
+        doc.createAt = Date();
         collection.insertOne(doc, (err, result) => {
             callback(err, result);
         });
@@ -121,21 +122,22 @@ module.exports = {
      * @param {Function} callback callback(results).
      */
     findDocuments: (collectionName, queryDoc, callback) => {
-        var pageParam = queryDoc.pageParam == null ? {} : queryDoc.pageParam;
-        var page = pageParam.page == null ? 1 : parseInt(pageParam.page);
-        var size = pageParam.size == null ? 20 : parseInt(pageParam.size);
+        queryDoc = queryDoc == null ? {} : queryDoc;
+        var page = queryDoc.page == null ? 1 : parseInt(queryDoc.page);
+        var size = queryDoc.size == null ? 20 : parseInt(queryDoc.size);
         size = size > 200 ? 200 : size; // API speed limit for 200 records/times
         var skip = (page - 1) * size;
-        var doc = queryDoc.doc; // can be an empty object.
+        delete queryDoc.page;
+        delete queryDoc.size;
         var collection = db.collection(collectionName);
         // desc by create time.
-        collection.find(doc)
+        collection.find(queryDoc)
             .sort({ createAt: -1 })
             .skip(skip)
             .limit(size)
             .toArray(
             (err, docs) => {
-                collection.count(doc,
+                collection.count(queryDoc,
                     (err, count) => {
                         var results = {};
                         results.docs = docs;
@@ -203,21 +205,21 @@ module.exports = {
      * @param {Function} callback callback(doc).
      */
     findSpecifiedDocuments: (collectionName, queryDoc, specifiedDoc, callback) => {
-        var pageParam = queryDoc.pageParam == null ? {} : queryDoc.pageParam;
-        var page = pageParam.page == null ? 1 : parseInt(pageParam.page);
-        var size = pageParam.size == null ? 20 : parseInt(pageParam.size);
+        queryDoc = queryDoc == null ? {} : queryDoc;
+        var page = queryDoc.page == null ? 1 : parseInt(queryDoc.page);
+        var size = queryDoc.size == null ? 20 : parseInt(queryDoc.size);
         size = size > 200 ? 200 : size; // API speed limit for 200 records/times
         var skip = (page - 1) * size;
-        var doc = queryDoc.doc; // can be an empty object.
+        delete queryDoc.page;
+        delete queryDoc.size;
         var collection = db.collection(collectionName);
-
-        collection.find(doc, specifiedDoc)
+        collection.find(queryDoc, specifiedDoc)
             .sort({ createAt: -1 })
             .skip(skip)
             .limit(size)
             .toArray(
             (err, docs) => {
-                collection.count(doc,
+                collection.count(queryDoc,
                     (err, count) => {
                         var results = {};
                         results.docs = docs;
@@ -237,21 +239,22 @@ module.exports = {
      * @param {Function} callback callback(results).
      */
     findSpecifiedSortedDocuments: (collectionName, queryDoc, specifiedDoc, sortDoc, callback) => {
-        var pageParam = queryDoc.pageParam == null ? {} : queryDoc.pageParam;
-        var page = pageParam.page == null ? 1 : parseInt(pageParam.page);
-        var size = pageParam.size == null ? 20 : parseInt(pageParam.size);
+        queryDoc = queryDoc == null ? {} : queryDoc;
+        var page = queryDoc.page == null ? 1 : parseInt(queryDoc.page);
+        var size = queryDoc.size == null ? 20 : parseInt(queryDoc.size);
         size = size > 200 ? 200 : size; // API speed limit for 200 records/times
         var skip = (page - 1) * size;
-        var doc = queryDoc.doc; // can be an empty object.
+        delete queryDoc.page;
+        delete queryDoc.size;
         var collection = db.collection(collectionName);
 
-        collection.find(doc, specifiedDoc)
+        collection.find(queryDoc, specifiedDoc)
             .sort(sortDoc)
             .skip(skip)
             .limit(size)
             .toArray(
             (err, docs) => {
-                collection.count(doc,
+                collection.count(queryDoc,
                     (err, count) => {
                         var results = {};
                         results.docs = docs;
