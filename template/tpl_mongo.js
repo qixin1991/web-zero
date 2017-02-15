@@ -310,10 +310,10 @@ module.exports = {
         var update_doc = null;
         delete updatedDoc._id; // don't update _id & createAt field.
         delete updatedDoc.createAt;
-        if (updatedDoc.hasOwnProperty('$push') || updatedDoc.hasOwnProperty('$unset')) {
+        if (updatedDoc.hasOwnProperty('$push') || updatedDoc.hasOwnProperty('$pull') || updatedDoc.hasOwnProperty('$unset')) {
             update_doc = updatedDoc;
         } else {
-            updatedDoc.updateAt = new Date();
+            updatedDoc.updateAt = Date();
             update_doc = { $set: updatedDoc };
         }
         collection.updateOne(conditionDoc, update_doc, (err, result) => {
