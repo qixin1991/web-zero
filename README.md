@@ -49,3 +49,7 @@ npm start
 Now, open browser to visit [http://localhost:3000](http://localhost:3000)
 
 Have Fun!
+
+# TODO
+
+- Add mysql regular CRUD support
