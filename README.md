@@ -73,4 +73,4 @@ Have Fun!
 
 # TODO
 
-- Add mysql regular CRUD support
+- ~~Add mysql regular CRUD support~~
