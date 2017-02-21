@@ -16,18 +16,19 @@ app.use(async (ctx, next) => {
 });
 
 // X-Response-Time Middleware
-app.use(async (ctx, next) => {
-  var start = new Date();
-  await next();
-  var ms = new Date() - start;
-  ctx.set('X-Response-Time', ms + 'ms');
-});
+// app.use(async (ctx, next) => {
+//   var start = new Date();
+//   await next();
+//   var ms = new Date() - start;
+//   ctx.set('X-Response-Time', ms + 'ms');
+// });
 
 // Logger middleware
 app.use(logger());
 app.use(ex('CN'));
 app.use(bodyParser());
 app.use(formParser());
+// getUserInfo Middleware. Warning: if the user info saved at mysql, remember to edit this module to adpter it. Default user info was saved at mongodb.
 app.use(routerExt());
 
 const routerDir = path.join(__dirname, 'routes');

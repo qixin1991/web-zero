@@ -13,6 +13,19 @@ npm install -g web-zero
 
 # Usage
 
+```
+➜ web-zero
+Usage: web-zero operation [init | new | delete] option [module_name] [databse_type]
+
+Example:
+	 web-zero init 			 Create a api project named current dir.
+	 web-zero new users 		 Create routes/users.js and dao/users.js files.
+	 web-zero new users mysql 	 Create users module with DB base on mysql.
+	 web-zero delete users 		 Delete routes/users.js and dao/users.js files.
+```
+
+# Example
+
 - Init project
 
 ```
@@ -24,6 +37,14 @@ web-zero init
 
 ```
 web-zero new users
+```
+
+Execute this in terminal, you'll see `routes/users.js` and `dao/users.js` that have been created.
+
+- Create a new Biz Module with dao base on mysql
+
+```
+web-zero new users mysql
 ```
 
 Execute this in terminal, you'll see `routes/users.js` and `dao/users.js` that have been created.

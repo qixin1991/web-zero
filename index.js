@@ -5,6 +5,7 @@ const fs = require('fs'),
     pwd = process.cwd(),
     operation = process.argv[2],
     option = process.argv[3],
+    db_type = process.argv[4],
     project_name = path.basename(pwd);
 var pkg = require(path.join(__dirname, 'package.example.json'));
 
@@ -37,7 +38,7 @@ switch (operation) {
 }
 
 function usage_info() {
-    const usage = `Usage: web-zero operation [init | new | delete] option [module_name]\n\nExample:\n\t web-zero init \t\t Create a api project named current dir.\n\t web-zero new users \t Create routes/users.js and dao/users.js files.\n\t web-zero delete users \t Delete routes/users.js and dao/users.js files.`;
+    const usage = `Usage: web-zero operation [init | new | delete] option [module_name] [databse_type]\n\nExample:\n\t web-zero init \t\t\t Create a api project named current dir.\n\t web-zero new users \t\t Create routes/users.js and dao/users.js files.\n\t web-zero new users mysql \t Create users module with DB base on mysql.\n\t web-zero delete users \t\t Delete routes/users.js and dao/users.js files.`;
     console.log(usage);
 }
 
@@ -87,11 +88,19 @@ function new_route(option) {
 }
 
 function new_dao(option) {
-    fs.writeFile(path.join(pwd, 'dao', option + '.js'), tpl.base_dao.replace(/\$option/g, option), (err) => {
-        if (err)
-            throw err;
-        console.log(` ---> Create File dao/${option}.js success...`);
-    });
+    if (db_type && db_type == 'mysql') {
+        fs.writeFile(path.join(pwd, 'dao', option + '.js'), tpl.mysql_dao.replace(/\$option/g, option), (err) => {
+            if (err)
+                throw err;
+            console.log(` ---> Create File dao/${option}.js success...`);
+        });
+    } else {
+        fs.writeFile(path.join(pwd, 'dao', option + '.js'), tpl.base_dao.replace(/\$option/g, option), (err) => {
+            if (err)
+                throw err;
+            console.log(` ---> Create File dao/${option}.js success...`);
+        });
+    }
 }
 
 /**
