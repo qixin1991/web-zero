@@ -13,8 +13,7 @@ var config = {
   Qiniu: db.Qiniu,
   Mongo: db.Mongo,
   Redis: db.Redis,
-  Mysql: db.Mysql,
-  JzezMiddle: db.JzezMiddle
+  Mysql: db.Mysql
 };
 
 module.exports = config;
