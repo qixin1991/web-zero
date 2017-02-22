@@ -7,6 +7,8 @@ Nodejs web project code scaffold base on Koa@2.
 
 # Install
 
+> **Warning:** Dependency on Node `v7.6.0` or higher
+
 ```
 npm install -g web-zero
 ```
@@ -60,8 +62,6 @@ Execute this in terminal, you'll see `routes/users.js` and `dao/users.js` that h
 - Start webapp
 
 > Remember to edit `conf/db_${env}.js`. These files are db settings.
->
-> **Warning:** Dependency on Node `v7.6.0` or higher
 
 ```
 npm install

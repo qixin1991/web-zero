@@ -15,25 +15,16 @@ if (!operation || (operation !== 'init' && !option)) {
 }
 switch (operation) {
     case 'init':
-        var g = init();
-        while (!g.next().done) {
-            g.next();
-        }
+        init();
         break;
     case 'new':
-        var g = new_module(option);
-        while (!g.next().done) {
-            g.next();
-        }
+        new_module(option);
         break;
     case 'delete':
-        var g = delete_module(option);
-        while (!g.next().done) {
-            g.next();
-        }
+        delete_module(option);
         break;
     default:
-        usage();
+        usage_info();
         break;
 }
 
@@ -45,194 +36,262 @@ function usage_info() {
 /**
  * init project.
  */
-function* init() {
-    yield init_dir();
-    yield init_file();
-    yield init_dependencies();
+async function init() {
+    await init_dir();
+    await init_file();
+    await init_dependencies();
 }
 
 /**
  * create route and dao files.
  */
-function* new_module(option) {
-    yield new_route(option);
-    yield new_dao(option);
+async function new_module(option) {
+    await new_route(option);
+    await new_dao(option);
 }
 
 /**
  * delete route and dao files.
  */
-function* delete_module(option) {
-    yield del_route(option);
-    yield del_dao(option);
+async function delete_module(option) {
+    await del_route(option);
+    await del_dao(option);
 }
 
-function del_route(option) {
-    fs.unlink(path.join(pwd, 'routes', option + '.js'), (err) => { // asynchronous delete
-        console.log(` ---> Delete File routes/${option}.js success...`);
+async function del_route(option) {
+    await new Promise((resolve, reject) => {
+        fs.unlink(path.join(pwd, 'routes', option + '.js'), (err) => { // asynchronous delete
+            console.log(` ---> Delete File\troutes/${option}.js \tsuccess...`);
+            resolve();
+        });
     });
 }
 
-function del_dao(option) {
-    fs.unlink(path.join(pwd, 'dao', option + '.js'), (err) => { // asynchronous delete
-        console.log(` ---> Delete File dao/${option}.js success...`);
+async function del_dao(option) {
+    await new Promise((resolve, reject) => {
+        fs.unlink(path.join(pwd, 'dao', option + '.js'), (err) => { // asynchronous delete
+            console.log(` ---> Delete File\tdao/${option}.js\t\tsuccess...`);
+            resolve();
+        });
     });
 }
 
-function new_route(option) {
-    fs.writeFile(path.join(pwd, 'routes', option + '.js'), tpl.base_router.replace(/\$option/g, option), (err) => {
-        if (err)
-            throw err;
-        console.log(` ---> Create File routes/${option}.js success...`);
-    });
-}
-
-function new_dao(option) {
-    if (db_type && db_type == 'mysql') {
-        fs.writeFile(path.join(pwd, 'dao', option + '.js'), tpl.mysql_dao.replace(/\$option/g, option), (err) => {
+async function new_route(option) {
+    await new Promise((resolve, reject) => {
+        fs.writeFile(path.join(pwd, 'routes', option + '.js'), tpl.base_router.replace(/\$option/g, option), (err) => {
             if (err)
                 throw err;
-            console.log(` ---> Create File dao/${option}.js success...`);
+            console.log(` ---> Create File\troutes/${option}.js \tsuccess...`);
+            resolve();
         });
-    } else {
-        fs.writeFile(path.join(pwd, 'dao', option + '.js'), tpl.base_dao.replace(/\$option/g, option), (err) => {
-            if (err)
-                throw err;
-            console.log(` ---> Create File dao/${option}.js success...`);
-        });
-    }
+    });
+}
+
+async function new_dao(option) {
+    await new Promise((resolve, reject) => {
+        if (db_type && db_type == 'mysql') {
+            fs.writeFile(path.join(pwd, 'dao', option + '.js'), tpl.mysql_dao.replace(/\$option/g, option), (err) => {
+                if (err)
+                    throw err;
+                console.log(` ---> Create File\tdao/${option}.js\t\tsuccess...`);
+                resolve();
+            });
+        } else {
+            fs.writeFile(path.join(pwd, 'dao', option + '.js'), tpl.base_dao.replace(/\$option/g, option), (err) => {
+                if (err)
+                    throw err;
+                console.log(` ---> Create File\tdao/${option}.js\t\tsuccess...`);
+                resolve();
+            });
+        }
+    });
 }
 
 /**
  * create route,dao,middleware and conf dir.
  */
-function init_dir() {
-    fs.mkdir(path.join(pwd, 'routes'), (err) => {
-        if (err && err.code !== 'EEXIST')
-            throw err;
-        console.log(' ---> Create Directory routes success...');
+async function init_dir() {
+    await new Promise((resolve, reject) => {
+        fs.mkdir(path.join(pwd, 'routes'), (err) => {
+            if (err && err.code !== 'EEXIST')
+                throw err;
+            console.log(' ---> Create Directory\troutes\t\t\tsuccess...');
+            resolve();
+        });
     });
 
-    fs.mkdir(path.join(pwd, 'dao'), (err) => {
-        if (err && err.code !== 'EEXIST')
-            throw err;
-        console.log(' ---> Create Directory dao success...');
+    await new Promise((resolve, reject) => {
+        fs.mkdir(path.join(pwd, 'dao'), (err) => {
+            if (err && err.code !== 'EEXIST')
+                throw err;
+            console.log(' ---> Create Directory\tdao\t\t\tsuccess...');
+            resolve();
+        });
     });
 
-    fs.mkdir(path.join(pwd, 'middleware'), (err) => {
-        if (err && err.code !== 'EEXIST')
-            throw err;
-        console.log(' ---> Create Directory middleware success...');
+    await new Promise((resolve, reject) => {
+        fs.mkdir(path.join(pwd, 'middleware'), (err) => {
+            if (err && err.code !== 'EEXIST')
+                throw err;
+            console.log(' ---> Create Directory\tmiddleware\t\tsuccess...');
+            resolve();
+        });
     });
 
-    fs.mkdir(path.join(pwd, 'conf'), (err) => {
-        if (err && err.code !== 'EEXIST')
-            throw err;
-        console.log(' ---> Create Directory conf success...');
+    await new Promise((resolve, reject) => {
+        fs.mkdir(path.join(pwd, 'conf'), (err) => {
+            if (err && err.code !== 'EEXIST')
+                throw err;
+            console.log(' ---> Create Directory\tconf\t\t\tsuccess...');
+            resolve();
+        });
     });
 
-    fs.mkdir(path.join(pwd, 'tools'), (err) => {
-        if (err && err.code !== 'EEXIST')
-            throw err;
-        console.log(' ---> Create Directory tools success...');
+    await new Promise((resolve, reject) => {
+        fs.mkdir(path.join(pwd, 'tools'), (err) => {
+            if (err && err.code !== 'EEXIST')
+                throw err;
+            console.log(' ---> Create Directory\ttools\t\t\tsuccess...');
+            resolve();
+        });
     });
 }
 
-function init_file() {
+async function init_file() {
     /**
     * create app.js and write tpl code into it.
     */
-    fs.writeFile(path.join(pwd, 'app.js'), tpl.app, (err) => {
-        if (err)
-            throw err;
-        console.log(' ---> Create File app.js success...');
+    await new Promise((resolve, reject) => {
+        fs.writeFile(path.join(pwd, 'app.js'), tpl.app, (err) => {
+            if (err)
+                throw err;
+            console.log(' ---> Create File\tapp.js\t\t\tsuccess...');
+            resolve();
+        });
     });
 
-    fs.writeFile(path.join(pwd, 'routes', 'index.js'), tpl.index, (err) => {
-        if (err)
-            throw err;
-        console.log(' ---> Create File routes/index.js success...');
+    await new Promise((resolve, reject) => {
+        fs.writeFile(path.join(pwd, 'routes', 'index.js'), tpl.index, (err) => {
+            if (err)
+                throw err;
+            console.log(' ---> Create File\troutes/index.js \tsuccess...');
+            resolve();
+        });
     });
 
     /**
     * create middleware/log.js
     */
-    fs.writeFile(path.join(pwd, 'middleware', 'log.js'), tpl.log, (err) => {
-        if (err)
-            throw err;
-        console.log(' ---> Create File middleware/log.js success...');
+    await new Promise((resolve, reject) => {
+        fs.writeFile(path.join(pwd, 'middleware', 'log.js'), tpl.log, (err) => {
+            if (err)
+                throw err;
+            console.log(' ---> Create File\tmiddleware/log.js \tsuccess...');
+            resolve();
+        });
     });
-    fs.writeFile(path.join(pwd, 'middleware', 'koa-router-ext.js'), tpl.koa_router_ext, (err) => {
-        if (err)
-            throw err;
-        console.log(' ---> Create File middleware/koa-router-ext.js success...');
+
+    await new Promise((resolve, reject) => {
+        fs.writeFile(path.join(pwd, 'middleware', 'koa-router-ext.js'), tpl.koa_router_ext, (err) => {
+            if (err)
+                throw err;
+            console.log(' ---> Create File\tmiddleware/koa-router-ext.js \tsuccess...');
+            resolve();
+        });
     });
 
     /**
      * create config.js | db_development.js | db_production.js | db_staging.js
      */
-    fs.writeFile(path.join(pwd, 'conf', 'config.js'), tpl.config, (err) => {
-        if (err)
-            throw err;
-        console.log(' ---> Create File conf/config.js success...');
+    await new Promise((resolve, reject) => {
+        fs.writeFile(path.join(pwd, 'conf', 'config.js'), tpl.config, (err) => {
+            if (err)
+                throw err;
+            console.log(' ---> Create File\tconf/config.js\t\tsuccess...');
+            resolve();
+        });
     });
 
-    fs.writeFile(path.join(pwd, 'conf', 'db_development.js'), tpl.db_development, (err) => {
-        if (err)
-            throw err;
-        console.log(' ---> Create File conf/db_development.js success...');
+    await new Promise((resolve, reject) => {
+        fs.writeFile(path.join(pwd, 'conf', 'db_development.js'), tpl.db_development, (err) => {
+            if (err)
+                throw err;
+            console.log(' ---> Create File\tconf/db_development.js \tsuccess...');
+            resolve();
+        });
     });
 
-    fs.writeFile(path.join(pwd, 'conf', 'db_staging.js'), tpl.db_staging, (err) => {
-        if (err)
-            throw err;
-        console.log(' ---> Create File conf/db_staging.js success...');
+    await new Promise((resolve, reject) => {
+        fs.writeFile(path.join(pwd, 'conf', 'db_staging.js'), tpl.db_staging, (err) => {
+            if (err)
+                throw err;
+            console.log(' ---> Create File\tconf/db_staging.js \tsuccess...');
+            resolve();
+        });
     });
 
-    fs.writeFile(path.join(pwd, 'conf', 'db_production.js'), tpl.db_production, (err) => {
-        if (err)
-            throw err;
-        console.log(' ---> Create File conf/db_production.js success...');
+    await new Promise((resolve, reject) => {
+        fs.writeFile(path.join(pwd, 'conf', 'db_production.js'), tpl.db_production, (err) => {
+            if (err)
+                throw err;
+            console.log(' ---> Create File\tconf/db_production.js \tsuccess...');
+            resolve();
+        });
     });
 
     /**
      * create mongo.js | redis.js | qiniu.js | mysql.js
      */
-    fs.writeFile(path.join(pwd, 'dao', 'mongo.js'), tpl.mongo, (err) => {
-        if (err)
-            throw err;
-        console.log(' ---> Create File dao/mongo.js success...');
+    await new Promise((resolve, reject) => {
+        fs.writeFile(path.join(pwd, 'dao', 'mongo.js'), tpl.mongo, (err) => {
+            if (err)
+                throw err;
+            console.log(' ---> Create File\tdao/mongo.js\t\tsuccess...');
+            resolve();
+        });
     });
 
-    fs.writeFile(path.join(pwd, 'dao', 'redis.js'), tpl.redis, (err) => {
-        if (err)
-            throw err;
-        console.log(' ---> Create File dao/redis.js success...');
+    await new Promise((resolve, reject) => {
+        fs.writeFile(path.join(pwd, 'dao', 'redis.js'), tpl.redis, (err) => {
+            if (err)
+                throw err;
+            console.log(' ---> Create File\tdao/redis.js\t\tsuccess...');
+            resolve();
+        });
     });
 
-    fs.writeFile(path.join(pwd, 'dao', 'qiniu.js'), tpl.qiniu, (err) => {
-        if (err)
-            throw err;
-        console.log(' ---> Create File dao/qiniu.js success...');
+    await new Promise((resolve, reject) => {
+        fs.writeFile(path.join(pwd, 'dao', 'qiniu.js'), tpl.qiniu, (err) => {
+            if (err)
+                throw err;
+            console.log(' ---> Create File\tdao/qiniu.js\t\tsuccess...');
+            resolve();
+        });
     });
 
-    fs.writeFile(path.join(pwd, 'dao', 'mysql.js'), tpl.mysql, (err) => {
-        if (err)
-            throw err;
-        console.log(' ---> Create File dao/mysql.js success...');
+    await new Promise((resolve, reject) => {
+        fs.writeFile(path.join(pwd, 'dao', 'mysql.js'), tpl.mysql, (err) => {
+            if (err)
+                throw err;
+            console.log(' ---> Create File\tdao/mysql.js\t\tsuccess...');
+            resolve();
+        });
     });
 
-    fs.writeFile(path.join(pwd, 'tools', 'security.js'), tpl.tools, (err) => {
-        if (err)
-            throw err;
-        console.log(' ---> Create File tools/security.js success...');
+    await new Promise((resolve, reject) => {
+        fs.writeFile(path.join(pwd, 'tools', 'security.js'), tpl.tools, (err) => {
+            if (err)
+                throw err;
+            console.log(' ---> Create File\ttools/security.js \tsuccess...');
+            resolve();
+        });
     });
 }
 
 /**
  * add dependencies to package.json
  */
-function init_dependencies() {
+async function init_dependencies() {
     pkg.dependencies = {
         "ioredis": "^2.3.0",
         "koa": "^2.0.0",
@@ -246,10 +305,12 @@ function init_dependencies() {
         "superagent": "^2.1.0"
     }
     pkg.name = project_name;
-
-    fs.writeFile(path.join(pwd, 'package.json'), JSON.stringify(pkg, null, 4), (err) => {
-        if (err)
-            throw err;
-        console.log(' ---> Add dependencies success...');
+    await new Promise((resolve, reject) => {
+        fs.writeFile(path.join(pwd, 'package.json'), JSON.stringify(pkg, null, 4), (err) => {
+            if (err)
+                throw err;
+            console.log(' ---> Add dependencies \tsuccess...');
+            resolve();
+        });
     });
 }

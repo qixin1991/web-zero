@@ -5,7 +5,7 @@ if ( allowEnvs.indexOf(env) < 0 ) {
   // Invalidation env. Load with a default value:development.
   env = 'development';
 }
-console.log(' ---> 当前环境变量: NODE_ENV='+env);
+console.log(' ---> Loading config for: NODE_ENV='+env);
 
 var db = require('./db_'+env);
 
