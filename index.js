@@ -1,88 +1,140 @@
 #!/usr/bin/env node
 const fs = require('fs'),
-    path = require('path');
-const tpl = require(path.join(__dirname, 'template', 'tpl.js'));
-var pkg = require('./package.json');
+    path = require('path'),
+    tpl = require(path.join(__dirname, 'template', 'tpl.js')),
+    pwd = process.cwd(),
+    operation = process.argv[2],
+    option = process.argv[3],
+    db_type = process.argv[4],
+    project_name = path.basename(pwd);
+var pkg = require(path.join(__dirname, 'package.example.json'));
 
-const operation = process.argv[2],
-    option = process.argv[3];
-
+if (!operation || (operation !== 'init' && !option)) {
+    usage_info();
+    process.exit(0);
+}
 switch (operation) {
     case 'init':
-        init();
+        var g = init();
+        while (!g.next().done) {
+            g.next();
+        }
         break;
     case 'new':
-        if (!option) {
-            console.error('please tell me the module name!');
-            break;
+        var g = new_module(option);
+        while (!g.next().done) {
+            g.next();
         }
-        new_module(option);
+        break;
+    case 'delete':
+        var g = delete_module(option);
+        while (!g.next().done) {
+            g.next();
+        }
         break;
     default:
-        console.log(' Usage: web-zero operation [init | new] option [module_name]');
+        usage();
         break;
 }
-// init();
+
+function usage_info() {
+    const usage = `Usage: web-zero operation [init | new | delete] option [module_name] [databse_type]\n\nExample:\n\t web-zero init \t\t\t Create a api project named current dir.\n\t web-zero new users \t\t Create routes/users.js and dao/users.js files.\n\t web-zero new users mysql \t Create users module with DB base on mysql.\n\t web-zero delete users \t\t Delete routes/users.js and dao/users.js files.`;
+    console.log(usage);
+}
 
 /**
  * init project.
  */
-async function init() {
-    await init_dir();
-    await init_file();
-    await init_dependencies();
+function* init() {
+    yield init_dir();
+    yield init_file();
+    yield init_dependencies();
 }
 
 /**
  * create route and dao files.
  */
-async function new_module(option) {
-    await new_route(option);
-    await new_dao(option);
+function* new_module(option) {
+    yield new_route(option);
+    yield new_dao(option);
+}
+
+/**
+ * delete route and dao files.
+ */
+function* delete_module(option) {
+    yield del_route(option);
+    yield del_dao(option);
+}
+
+function del_route(option) {
+    fs.unlink(path.join(pwd, 'routes', option + '.js'), (err) => { // asynchronous delete
+        console.log(` ---> Delete File routes/${option}.js success...`);
+    });
+}
+
+function del_dao(option) {
+    fs.unlink(path.join(pwd, 'dao', option + '.js'), (err) => { // asynchronous delete
+        console.log(` ---> Delete File dao/${option}.js success...`);
+    });
 }
 
 function new_route(option) {
-    fs.writeFile(path.join(__dirname, 'routes', option + '.js'), tpl.base_router.replace(/\$option/g, option), (err) => {
+    fs.writeFile(path.join(pwd, 'routes', option + '.js'), tpl.base_router.replace(/\$option/g, option), (err) => {
         if (err)
             throw err;
-        console.log(` ---> Create routes/${option}.js success...`);
+        console.log(` ---> Create File routes/${option}.js success...`);
     });
 }
 
 function new_dao(option) {
-    fs.writeFile(path.join(__dirname, 'dao', option + '.js'), tpl.base_dao.replace(/\$option/g, option.toUpperCase()), (err) => {
-        if (err)
-            throw err;
-        console.log(` ---> Create dao/${option}.js success...`);
-    });
+    if (db_type && db_type == 'mysql') {
+        fs.writeFile(path.join(pwd, 'dao', option + '.js'), tpl.mysql_dao.replace(/\$option/g, option), (err) => {
+            if (err)
+                throw err;
+            console.log(` ---> Create File dao/${option}.js success...`);
+        });
+    } else {
+        fs.writeFile(path.join(pwd, 'dao', option + '.js'), tpl.base_dao.replace(/\$option/g, option), (err) => {
+            if (err)
+                throw err;
+            console.log(` ---> Create File dao/${option}.js success...`);
+        });
+    }
 }
 
 /**
- * create route and dao dir.
+ * create route,dao,middleware and conf dir.
  */
 function init_dir() {
-    fs.mkdir(path.join(__dirname, 'routes'), (err) => {
+    fs.mkdir(path.join(pwd, 'routes'), (err) => {
         if (err && err.code !== 'EEXIST')
             throw err;
-        console.log(' ---> Create routes dir success...');
+        console.log(' ---> Create Directory routes success...');
     });
 
-    fs.mkdir(path.join(__dirname, 'dao'), (err) => {
+    fs.mkdir(path.join(pwd, 'dao'), (err) => {
         if (err && err.code !== 'EEXIST')
             throw err;
-        console.log(' ---> Create dao dir success...');
+        console.log(' ---> Create Directory dao success...');
     });
 
-    fs.mkdir(path.join(__dirname, 'middleware'), (err) => {
+    fs.mkdir(path.join(pwd, 'middleware'), (err) => {
         if (err && err.code !== 'EEXIST')
             throw err;
-        console.log(' ---> Create middleware dir success...');
+        console.log(' ---> Create Directory middleware success...');
     });
 
-    fs.mkdir(path.join(__dirname, 'conf'), (err) => {
+    fs.mkdir(path.join(pwd, 'conf'), (err) => {
         if (err && err.code !== 'EEXIST')
             throw err;
-        console.log(' ---> Create middleware dir success...');
+        console.log(' ---> Create Directory conf success...');
+    });
+
+    fs.mkdir(path.join(pwd, 'tools'), (err) => {
+        if (err && err.code !== 'EEXIST')
+            throw err;
+        console.log(' ---> Create Directory tools success...');
     });
 }
 
@@ -90,82 +142,90 @@ function init_file() {
     /**
     * create app.js and write tpl code into it.
     */
-    fs.writeFile(path.join(__dirname, 'app.js'), tpl.app, (err) => {
+    fs.writeFile(path.join(pwd, 'app.js'), tpl.app, (err) => {
         if (err)
             throw err;
-        console.log(' ---> Create app.js success...');
+        console.log(' ---> Create File app.js success...');
     });
 
-    /**
-     * create routes/base.js
-     */
-    fs.writeFile(path.join(__dirname, 'routes', 'base.js'), tpl.base, (err) => {
+    fs.writeFile(path.join(pwd, 'routes', 'index.js'), tpl.index, (err) => {
         if (err)
             throw err;
-        console.log(' ---> Create routes/base.js success...');
+        console.log(' ---> Create File routes/index.js success...');
     });
 
     /**
     * create middleware/log.js
     */
-    fs.writeFile(path.join(__dirname, 'middleware', 'log.js'), tpl.log, (err) => {
+    fs.writeFile(path.join(pwd, 'middleware', 'log.js'), tpl.log, (err) => {
         if (err)
             throw err;
-        console.log(' ---> Create middleware/log.js success...');
+        console.log(' ---> Create File middleware/log.js success...');
+    });
+    fs.writeFile(path.join(pwd, 'middleware', 'koa-router-ext.js'), tpl.koa_router_ext, (err) => {
+        if (err)
+            throw err;
+        console.log(' ---> Create File middleware/koa-router-ext.js success...');
     });
 
     /**
      * create config.js | db_development.js | db_production.js | db_staging.js
      */
-    fs.writeFile(path.join(__dirname, 'conf', 'config.js'), tpl.config, (err) => {
+    fs.writeFile(path.join(pwd, 'conf', 'config.js'), tpl.config, (err) => {
         if (err)
             throw err;
-        console.log(' ---> Create conf/config.js success...');
+        console.log(' ---> Create File conf/config.js success...');
     });
 
-    fs.writeFile(path.join(__dirname, 'conf', 'db_development.js'), tpl.db_development, (err) => {
+    fs.writeFile(path.join(pwd, 'conf', 'db_development.js'), tpl.db_development, (err) => {
         if (err)
             throw err;
-        console.log(' ---> Create conf/db_development.js success...');
+        console.log(' ---> Create File conf/db_development.js success...');
     });
 
-    fs.writeFile(path.join(__dirname, 'conf', 'db_staging.js'), tpl.db_staging, (err) => {
+    fs.writeFile(path.join(pwd, 'conf', 'db_staging.js'), tpl.db_staging, (err) => {
         if (err)
             throw err;
-        console.log(' ---> Create conf/db_staging.js success...');
+        console.log(' ---> Create File conf/db_staging.js success...');
     });
 
-    fs.writeFile(path.join(__dirname, 'conf', 'db_production.js'), tpl.db_production, (err) => {
+    fs.writeFile(path.join(pwd, 'conf', 'db_production.js'), tpl.db_production, (err) => {
         if (err)
             throw err;
-        console.log(' ---> Create conf/db_production.js success...');
+        console.log(' ---> Create File conf/db_production.js success...');
     });
 
     /**
      * create mongo.js | redis.js | qiniu.js | mysql.js
      */
-    fs.writeFile(path.join(__dirname, 'dao', 'mongo.js'), tpl.mongo, (err) => {
+    fs.writeFile(path.join(pwd, 'dao', 'mongo.js'), tpl.mongo, (err) => {
         if (err)
             throw err;
-        console.log(' ---> Create dao/mongo.js success...');
+        console.log(' ---> Create File dao/mongo.js success...');
     });
 
-    fs.writeFile(path.join(__dirname, 'dao', 'redis.js'), tpl.redis, (err) => {
+    fs.writeFile(path.join(pwd, 'dao', 'redis.js'), tpl.redis, (err) => {
         if (err)
             throw err;
-        console.log(' ---> Create dao/redis.js success...');
+        console.log(' ---> Create File dao/redis.js success...');
     });
 
-    fs.writeFile(path.join(__dirname, 'dao', 'qiniu.js'), tpl.qiniu, (err) => {
+    fs.writeFile(path.join(pwd, 'dao', 'qiniu.js'), tpl.qiniu, (err) => {
         if (err)
             throw err;
-        console.log(' ---> Create dao/qiniu.js success...');
+        console.log(' ---> Create File dao/qiniu.js success...');
     });
 
-    fs.writeFile(path.join(__dirname, 'dao', 'mysql.js'), tpl.mysql, (err) => {
+    fs.writeFile(path.join(pwd, 'dao', 'mysql.js'), tpl.mysql, (err) => {
         if (err)
             throw err;
-        console.log(' ---> Create dao/mysql.js success...');
+        console.log(' ---> Create File dao/mysql.js success...');
+    });
+
+    fs.writeFile(path.join(pwd, 'tools', 'security.js'), tpl.tools, (err) => {
+        if (err)
+            throw err;
+        console.log(' ---> Create File tools/security.js success...');
     });
 }
 
@@ -174,22 +234,20 @@ function init_file() {
  */
 function init_dependencies() {
     pkg.dependencies = {
-        "expect.js": "^0.3.1",
-        "formidable": "^1.0.17",
         "ioredis": "^2.3.0",
         "koa": "^2.0.0",
         "koa-bodyparser": "^3.2.0",
         "koa-exception": "^2.0.0",
         "koa-router": "^7.0.1",
-        "moment": "^2.15.1",
+        "koa-router-form-parser": "0.0.1",
         "mongodb": "^2.2.8",
         "mysql": "^2.11.1",
         "qiniu": "^6.1.11",
-        "redlock": "^2.0.1",
         "superagent": "^2.1.0"
     }
+    pkg.name = project_name;
 
-    fs.writeFile(path.join(__dirname, 'package.json'), JSON.stringify(pkg, null, 4), (err) => {
+    fs.writeFile(path.join(pwd, 'package.json'), JSON.stringify(pkg, null, 4), (err) => {
         if (err)
             throw err;
         console.log(' ---> Add dependencies success...');
