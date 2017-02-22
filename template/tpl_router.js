@@ -5,7 +5,6 @@ module.exports = `const KoaRouter = require('koa-router'),
     });
 
 router.get('/', async ctx => {
-    var doc = {};
     var params = ctx.query;
     ctx.body = { code: 200, data: await dao.list(params) };
 });
