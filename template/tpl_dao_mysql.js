@@ -34,7 +34,7 @@ module.exports = {
         return new Promise(
             (resolve, reject) => {
                 if (!params.id) reject(new Error('id 为必传参数'));
-                mysql.updateById('person', params, (err, res) => {
+                mysql.updateById('$option', params, (err, res) => {
                     if (err) reject(new Error("更新失败，系统异常!"));
                     resolve(res);
                 });
@@ -49,7 +49,7 @@ module.exports = {
             (resolve, reject) => {
                 var params = { id: id, status: -1 };
                 if (!id) reject(new Error('id 为必传参数'));
-                mysql.updateById('person', params, (err, res) => {
+                mysql.updateById('$option', params, (err, res) => {
                     if (err) reject(new Error("删除失败，系统异常!"));
                     resolve(res);
                 });
