@@ -1,4 +1,4 @@
-module.exports = `const KoaRouter = require('./base'),
+module.exports = `const KoaRouter = require('koa-router'),
     dao = require('../dao/$option'),
     router = new KoaRouter({
         prefix: '/$option'
