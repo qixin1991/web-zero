@@ -1,6 +1,6 @@
 {
     "name": "web-zero",
-    "version": "0.1.13",
+    "version": "0.1.14",
     "description": "Nodejs web project code scaffold base on Koa@2",
     "main": "index.js",
     "scripts": {

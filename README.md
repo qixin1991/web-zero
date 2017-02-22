@@ -61,7 +61,7 @@ Execute this in terminal, you'll see `routes/users.js` and `dao/users.js` that h
 
 > Remember to edit `conf/db_${env}.js`. These files are db settings.
 >
-> **Warning:** --async-await needs node v7
+> **Warning:** Dependency on Node `v7.6.0` or higher
 
 ```
 npm install
