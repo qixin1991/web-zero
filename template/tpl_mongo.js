@@ -84,6 +84,31 @@ module.exports = {
         });
     },
 
+    // ---------------------------------------------------------------------------
+    /**
+     * Aggregate For $lookup
+     * 
+     * @param {String} collectionName 
+     * @param {Object} lookupDoc { from: '', localField: '', foreignField: '', as: ''}
+     * @param {Object} matchDoc like having or where in SQL
+     * @param {Object} pageDoc page params.
+     * @param {Function} callback callback function return err,docs
+     */
+    aggregateForLookup: (collectionName, lookupDoc, matchDoc, pageDoc, callback) => {
+        var page = pageDoc.page == null ? 1 : parseInt(pageDoc.page);
+        var size = pageDoc.size == null ? 20 : parseInt(pageDoc.size);
+        size = size > 200 ? 200 : size; // API speed limit for 200 records/times
+        var skip = (page - 1) * size;
+        var collection = db.collection(collectionName);
+        collection.aggregate([
+            { $lookup: lookupDoc }, { $match: matchDoc == null ? {} : matchDoc }, { $skip: skip }, { $limit: size }
+        ], (err, docs) => {
+            collection.count(matchDoc, (err, count) => {
+                callback(err, { docs: docs, count: count });
+            });
+        });
+    },
+
     /**
      * Find One Document.
      * 
