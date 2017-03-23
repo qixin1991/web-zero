@@ -1,4 +1,4 @@
-module.exports = `var config = {
+module.exports = `let config = {
   Qiniu: {
     ACCESS_KEY: '',
     SECRET_KEY: '',

@@ -7,7 +7,7 @@ const fs = require('fs'),
     option = process.argv[3],
     db_type = process.argv[4],
     project_name = path.basename(pwd);
-var pkg = require(path.join(__dirname, 'package.example.json'));
+let pkg = require(path.join(__dirname, 'package.example.json'));
 
 if (!operation || (operation !== 'init' && !option)) {
     usage_info();

@@ -17,9 +17,9 @@ app.use(async (ctx, next) => {
 
 // X-Response-Time Middleware
 // app.use(async (ctx, next) => {
-//   var start = new Date();
+//   let start = new Date();
 //   await next();
-//   var ms = new Date() - start;
+//   let ms = new Date() - start;
 //   ctx.set('X-Response-Time', ms + 'ms');
 // });
 
@@ -32,7 +32,7 @@ app.use(formParser());
 app.use(routerExt());
 
 const routerDir = path.join(__dirname, 'routes');
-var readFiles = () => {
+let readFiles = () => {
   return new Promise((resolve, reject) => {
     fs.readdir(routerDir, (err, files) => {
       resolve(files.filter((f) => {
@@ -44,7 +44,7 @@ var readFiles = () => {
 
 (async () => {
   let files = await readFiles();
-  for (var file of files) {
+  for (let file of files) {
     try {
       app.use(require(path.join(routerDir, file)).routes());
     } catch (error) {
@@ -54,7 +54,7 @@ var readFiles = () => {
   }
 })();
 
-var port = 3000;
+let port = 3000;
 app.listen(port, function () {
   console.log(\` ---> Server running on port: \${port}\`);
 });

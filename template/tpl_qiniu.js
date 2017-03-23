@@ -9,12 +9,12 @@ bucket = config.Qiniu.bucket;
  * 构建上传策略函数
  */
 function uptoken(key) {
-  var putPolicy = new qiniu.rs.PutPolicy(bucket + ":" + key);
+  let putPolicy = new qiniu.rs.PutPolicy(bucket + ":" + key);
   return putPolicy.token();
 }
 
 function uploadToQiniu(uptoken, key, localFile, callback) {
-  var extra = new qiniu.io.PutExtra();
+  let extra = new qiniu.io.PutExtra();
   qiniu.io.putFile(uptoken, key, localFile, extra, (err, ret) => {
     if (!err) {
       // 上传成功， 处理返回值
@@ -40,7 +40,7 @@ module.exports = {
     });
   },
   deleteFile: (key, callback) => {
-    var client = new qiniu.rs.Client();
+    let client = new qiniu.rs.Client();
     client.remove(bucket, key, (err, ret) => {
       if ((!err)) {
         console.log('delete ok.');

@@ -19,7 +19,7 @@ module.exports = `/**
 */
 const config = require('../conf/config'),
     MongoClient = require('mongodb').MongoClient;
-var db;
+let db;
 
 // MongoClient connection pooling.
 MongoClient.connect(config.Mongo.url, (err, database) => {
@@ -43,7 +43,7 @@ module.exports = {
      * @param {Function} callback callback(err,result).
     */
     insertDocument: (collectionName, doc, callback) => {
-        var collection = db.collection(collectionName);
+        let collection = db.collection(collectionName);
         doc.createAt = Date();
         collection.insertOne(doc, (err, result) => {
             callback(err, result);
@@ -59,7 +59,7 @@ module.exports = {
      * @param {Function} callback callback(err,result).
      */
     insertDocuments: (collectionName, docs, callback) => {
-        var collection = db.collection(collectionName);
+        let collection = db.collection(collectionName);
         collection.insertMany(docs, (err, result) => {
             // console.log(result.result.n);   // result Contains the result document from MongoDB
             // console.log(result.ops.length); //ops Contains the documents inserted with added _id fields
@@ -78,7 +78,7 @@ module.exports = {
      * @param {Function} callback callback(err,result).
      */
     upsertDocument: (collectionName, queryDoc, upsertDoc, callback) => {
-        var collection = db.collection(collectionName);
+        let collection = db.collection(collectionName);
         collection.update(queryDoc, upsertDoc, { upsert: true }, (err, result) => {
             callback(err, result);
         });
@@ -95,11 +95,11 @@ module.exports = {
      * @param {Function} callback callback function return err,docs
      */
     aggregateForLookup: (collectionName, lookupDoc, matchDoc, pageDoc, callback) => {
-        var page = pageDoc.page == null ? 1 : parseInt(pageDoc.page);
-        var size = pageDoc.size == null ? 20 : parseInt(pageDoc.size);
+        let page = pageDoc.page == null ? 1 : parseInt(pageDoc.page);
+        let size = pageDoc.size == null ? 20 : parseInt(pageDoc.size);
         size = size > 200 ? 200 : size; // API speed limit for 200 records/times
-        var skip = (page - 1) * size;
-        var collection = db.collection(collectionName);
+        let skip = (page - 1) * size;
+        let collection = db.collection(collectionName);
         collection.aggregate([
             { $lookup: lookupDoc }, { $match: matchDoc == null ? {} : matchDoc }, { $skip: skip }, { $limit: size }
         ], (err, docs) => {
@@ -117,7 +117,7 @@ module.exports = {
      * @param {Function} callback callback(doc).
      */
     findDocument: (collectionName, queryDoc, callback) => {
-        var collection = db.collection(collectionName);
+        let collection = db.collection(collectionName);
         collection.findOne(queryDoc).then((doc) => {
             callback(doc);
         });
@@ -132,7 +132,7 @@ module.exports = {
      * @param {Function} callback callback(doc).
      */
     findSpecifiedDocument: (collectionName, queryDoc, specifiedDoc, callback) => {
-        var collection = db.collection(collectionName);
+        let collection = db.collection(collectionName);
         collection.findOne(queryDoc, specifiedDoc).then((doc) => {
             callback(doc);
         });
@@ -148,13 +148,13 @@ module.exports = {
      */
     findDocuments: (collectionName, queryDoc, callback) => {
         queryDoc = queryDoc == null ? {} : queryDoc;
-        var page = queryDoc.page == null ? 1 : parseInt(queryDoc.page);
-        var size = queryDoc.size == null ? 20 : parseInt(queryDoc.size);
+        let page = queryDoc.page == null ? 1 : parseInt(queryDoc.page);
+        let size = queryDoc.size == null ? 20 : parseInt(queryDoc.size);
         size = size > 200 ? 200 : size; // API speed limit for 200 records/times
-        var skip = (page - 1) * size;
+        let skip = (page - 1) * size;
         delete queryDoc.page;
         delete queryDoc.size;
-        var collection = db.collection(collectionName);
+        let collection = db.collection(collectionName);
         // desc by create time.
         collection.find(queryDoc)
             .sort({ createAt: -1 })
@@ -164,7 +164,7 @@ module.exports = {
             (err, docs) => {
                 collection.count(queryDoc,
                     (err, count) => {
-                        var results = {};
+                        let results = {};
                         results.docs = docs;
                         results.count = count;
                         callback(results);
@@ -181,7 +181,7 @@ module.exports = {
      * @param {Function} callback callback(docs).
      */
     findAllDocuments: (collectionName, queryDoc, callback) => {
-        var collection = db.collection(collectionName);
+        let collection = db.collection(collectionName);
         collection.find(queryDoc)
             .toArray((err, docs) => {
                 callback(docs);
@@ -197,7 +197,7 @@ module.exports = {
      * @param {Function} callback callback(docs).
      */
     findAllDocumentsSorted: (collectionName, queryDoc, sortDoc, callback) => {
-        var collection = db.collection(collectionName);
+        let collection = db.collection(collectionName);
         collection.find(queryDoc)
             .sort(sortDoc)
             .toArray((err, docs) => {
@@ -214,7 +214,7 @@ module.exports = {
      * @param {Function} callback callback(doc).
      */
     findAllSpecifiedDocuments: (collectionName, queryDoc, specifiedDoc, callback) => {
-        var collection = db.collection(collectionName);
+        let collection = db.collection(collectionName);
         collection.find(queryDoc, specifiedDoc)
             .toArray((err, docs) => {
                 callback(docs);
@@ -231,13 +231,13 @@ module.exports = {
      */
     findSpecifiedDocuments: (collectionName, queryDoc, specifiedDoc, callback) => {
         queryDoc = queryDoc == null ? {} : queryDoc;
-        var page = queryDoc.page == null ? 1 : parseInt(queryDoc.page);
-        var size = queryDoc.size == null ? 20 : parseInt(queryDoc.size);
+        let page = queryDoc.page == null ? 1 : parseInt(queryDoc.page);
+        let size = queryDoc.size == null ? 20 : parseInt(queryDoc.size);
         size = size > 200 ? 200 : size; // API speed limit for 200 records/times
-        var skip = (page - 1) * size;
+        let skip = (page - 1) * size;
         delete queryDoc.page;
         delete queryDoc.size;
-        var collection = db.collection(collectionName);
+        let collection = db.collection(collectionName);
         collection.find(queryDoc, specifiedDoc)
             .sort({ createAt: -1 })
             .skip(skip)
@@ -246,7 +246,7 @@ module.exports = {
             (err, docs) => {
                 collection.count(queryDoc,
                     (err, count) => {
-                        var results = {};
+                        let results = {};
                         results.docs = docs;
                         results.count = count;
                         callback(results);
@@ -265,13 +265,13 @@ module.exports = {
      */
     findSpecifiedSortedDocuments: (collectionName, queryDoc, specifiedDoc, sortDoc, callback) => {
         queryDoc = queryDoc == null ? {} : queryDoc;
-        var page = queryDoc.page == null ? 1 : parseInt(queryDoc.page);
-        var size = queryDoc.size == null ? 20 : parseInt(queryDoc.size);
+        let page = queryDoc.page == null ? 1 : parseInt(queryDoc.page);
+        let size = queryDoc.size == null ? 20 : parseInt(queryDoc.size);
         size = size > 200 ? 200 : size; // API speed limit for 200 records/times
-        var skip = (page - 1) * size;
+        let skip = (page - 1) * size;
         delete queryDoc.page;
         delete queryDoc.size;
-        var collection = db.collection(collectionName);
+        let collection = db.collection(collectionName);
 
         collection.find(queryDoc, specifiedDoc)
             .sort(sortDoc)
@@ -281,7 +281,7 @@ module.exports = {
             (err, docs) => {
                 collection.count(queryDoc,
                     (err, count) => {
-                        var results = {};
+                        let results = {};
                         results.docs = docs;
                         results.count = count;
                         callback(results);
@@ -299,7 +299,7 @@ module.exports = {
      * @param {Function} callback callback(docs).
      */
     findAllSpecifiedSortedDocuments: (collectionName, queryDoc, specifiedDoc, sortDoc, callback) => {
-        var collection = db.collection(collectionName);
+        let collection = db.collection(collectionName);
         collection.find(queryDoc, specifiedDoc)
             .sort(sortDoc)
             .toArray(
@@ -316,7 +316,7 @@ module.exports = {
      * @param {Function} callback callback(results).
      */
     findCount: (collectionName, queryDoc, callback) => {
-        var collection = db.collection(collectionName);
+        let collection = db.collection(collectionName);
         collection.count(queryDoc, (err, count) => {
             callback(count);
         })
@@ -331,8 +331,8 @@ module.exports = {
      * @param {Function} callback callback(err,result).
      */
     updateDocument: (collectionName, conditionDoc, updatedDoc, callback) => {
-        var collection = db.collection(collectionName);
-        var update_doc = null;
+        let collection = db.collection(collectionName);
+        let update_doc = null;
         delete updatedDoc._id; // don't update _id & createAt field.
         delete updatedDoc.createAt;
         if (updatedDoc.hasOwnProperty('$push') || updatedDoc.hasOwnProperty('$pull') || updatedDoc.hasOwnProperty('$unset')) {
@@ -356,7 +356,7 @@ module.exports = {
      */
     updateDocuments: (collectionName, conditionDoc, updatedDoc, callback) => {
         updatedDoc.updateAt = new Date();
-        var collection = db.collection(collectionName);
+        let collection = db.collection(collectionName);
         delete updatedDoc._id; // don't update _id & createAt field.
         delete updatedDoc.createAt;
         collection.updateMany(conditionDoc, { $set: updatedDoc }, (err, result) => {
@@ -378,7 +378,7 @@ module.exports = {
      * @param {Function} callback callback(err,result).
      */
     FindAndModifyDocument: (collectionName, queryDoc, sortDoc, updateDoc, callback) => {
-        var collection = db.collection(collectionName);
+        let collection = db.collection(collectionName);
         collection.findAndModify(queryDoc, sortDoc, updateDoc, { new: true }, (err, result) => {
             callback(err, result);
         });
@@ -392,7 +392,7 @@ module.exports = {
      * @param {Function} callback callback(err,result).
      */
     removeDocument: (collectionName, doc, callback) => {
-        var collection = db.collection(collectionName);
+        let collection = db.collection(collectionName);
         collection.deleteOne(doc, (err, result) => {
             callback(err, result);
         });
@@ -406,7 +406,7 @@ module.exports = {
      * @param {Function} callback callback(err,result).
      */
     removeDocuments: (collectionName, doc, callback) => {
-        var collection = db.collection(collectionName);
+        let collection = db.collection(collectionName);
         collection.deleteMany(doc, (err, result) => {
             callback(err, result);
         });

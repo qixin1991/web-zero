@@ -5,7 +5,7 @@ module.exports = `const mysql = require('mysql'),
     在单核 CPU 情况下, pool 对象会是一个单例,
     多核 CPU 并且 Node 应用处于 cluster 模式情况下,则会是多例!
 */
-var pool;
+let pool;
 if (!pool) {
   //  pool = mysql.createPool({
   //   host            : config.Mysql.host,
@@ -22,7 +22,7 @@ if (!pool) {
   //     Support for multiple statements is disabled for security
   //     reasons (it allows for SQL injection attacks if values are not properly escaped).
   //     To use this feature you have to enable it for your connection:
-  //          var connection = mysql.createConnection({multipleStatements: true});
+  //          let connection = mysql.createConnection({multipleStatements: true});
   //   */
   // });
   pool = mysql.createPoolCluster();
@@ -71,8 +71,8 @@ module.exports = {
    * @param {Function} callback Callback function
    */
   querySortedAndSpecifiedFields: function (tabName, specifiedFields, sortedObj, params, callback) {
-    var queryStr = '';
-    for (var i in params) {
+    let queryStr = '';
+    for (let i in params) {
       if (isNaN(params[i])) { // 非 number 类型，使用模糊检索方式
         queryStr += ' and ' + i + ' like \'%' + params[i] + '%\'';
       } else { // nunmber 类型，等值检索
@@ -80,10 +80,10 @@ module.exports = {
       }
     }
 
-    var sql = \`select * from \${tabName} where 1=1 $\{queryStr} \`;
+    let sql = \`select * from \${tabName} where 1=1 $\{queryStr} \`;
     if (specifiedFields) {
-      var specifiedArr = [];
-      for (var k of specifiedFields) {
+      let specifiedArr = [];
+      for (let k of specifiedFields) {
         specifiedArr.push(k);
       }
       sql = \`select \${specifiedArr.join(',')} from \${tabName} where 1=1 \${queryStr} \`;
@@ -92,7 +92,7 @@ module.exports = {
     if (sortedObj) {
       sql += ' order by ';
       sortedArr = [];
-      for (var j in sortedObj) {
+      for (let j in sortedObj) {
         sortedArr.push(j + ' ' + sortedObj[j]);
       }
       sql += sortedArr.join(',');
@@ -124,24 +124,24 @@ module.exports = {
   * @param {Function} callback Callback function
   */
   listSortedAndSpecifiedFields: function (tabName, specifiedFields, sortedObj, params, callback) {
-    var page = params.page == null ? 1 : parseInt(params.page);
-    var size = params.size == null ? 20 : parseInt(params.size);
+    let page = params.page == null ? 1 : parseInt(params.page);
+    let size = params.size == null ? 20 : parseInt(params.size);
     size = size > 200 ? 200 : size; // API speed limit for 200 records/times
-    var skip = (page - 1) * size;
+    let skip = (page - 1) * size;
     delete params.page;
     delete params.size;
-    var queryStr = '';
-    for (var i in params) {
+    let queryStr = '';
+    for (let i in params) {
       if (isNaN(params[i])) { // 非 number 类型，使用模糊检索方式
         queryStr += ' and ' + i + ' like \'%' + params[i] + '%\'';
       } else { // nunmber 类型，等值检索
         queryStr += ' and ' + i + '=' + params[i];
       }
     }
-    var sql = \`select * from \${tabName} where 1=1 \${queryStr} \`;
+    let sql = \`select * from \${tabName} where 1=1 \${queryStr} \`;
     if (specifiedFields) {
-      var specifiedArr = [];
-      for (var k of specifiedFields) {
+      let specifiedArr = [];
+      for (let k of specifiedFields) {
         specifiedArr.push(k);
       }
       sql = \`select \${specifiedArr.join(',')} from \${tabName} where 1=1 \${queryStr} \`;
@@ -149,7 +149,7 @@ module.exports = {
     if (sortedObj) {
       sql += ' order by ';
       sortedArr = [];
-      for (var j in sortedObj) {
+      for (let j in sortedObj) {
         sortedArr.push(j + ' ' + sortedObj[j]);
       }
       sql += sortedArr.join(',');
@@ -204,7 +204,7 @@ module.exports = {
           connection.release();
           callback('--- 开启事务失败! error:' + err, null);
         }
-        var query = connection.query(sql, params, (err, result) => {
+        let query = connection.query(sql, params, (err, result) => {
           if (err) {
             connection.rollback(() => {
               callback('--- sql 执行失败! error:' + err, null);
@@ -237,7 +237,7 @@ module.exports = {
       if (err) {
         callback('--- 数据库连接失败! error:' + err, null);
       }
-      var query = connection.query(sql, params, (err, result, fileds) => {
+      let query = connection.query(sql, params, (err, result, fileds) => {
         // 释放连接,返回给连接池管理
         // console.log(connection);
         connection.release();

@@ -5,29 +5,29 @@ module.exports = `const KoaRouter = require('koa-router'),
     });
 
 router.get('/', async ctx => {
-    var params = ctx.query;
+    let params = ctx.query;
     ctx.body = { code: 200, data: await dao.list(params) };
 });
 
 router.post('/', async ctx => {
-    var data = ctx.request.body;
+    let data = ctx.request.body;
     await dao.create(data);
     ctx.body = { code: 200, msg: 'ok' };
 });
 
 router.put('/', async ctx => {
-    var data = ctx.request.body;
+    let data = ctx.request.body;
     await dao.update(data);
     ctx.body = { code: 200, msg: 'ok' };
 });
 
 router.delete('/:id', async ctx => {
-    var id = ctx.params.id;
+    let id = ctx.params.id;
     await dao.delete(id);
     ctx.body = { code: 200, msg: 'ok' };
 });
 router.get('/:id', async ctx => {
-    var doc = await dao.get(this.params.id);
+    let doc = await dao.get(this.params.id);
     ctx.body = { code: 200, data: doc };
 });
 

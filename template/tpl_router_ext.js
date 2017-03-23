@@ -8,7 +8,7 @@ module.exports = () => {
             return new Promise((resovle, reject) => {
                 const token = ctx.cookies.get('token');
                 if (!token) {
-                    var err = new Error('您还未登录!');
+                    let err = new Error('您还未登录!');
                     err.name = "token_error";
                     reject(err);
                 }
@@ -18,7 +18,7 @@ module.exports = () => {
                         // get userinfo from mongodb by token string.
                         mongo.findDocument('users', { token: token, last_login: { $gte: new Date(new Date().getTime() - config.Redis.ttl * 1000) } }, (doc) => {
                             if (!doc) {
-                                var err = new Error('登录信息已过期,请先登录!');
+                                let err = new Error('登录信息已过期,请先登录!');
                                 err.name = "token_error";
                                 reject(err);
                             }

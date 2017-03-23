@@ -7,7 +7,7 @@ module.exports = `const Redis = require('ioredis'),
     在单核 CPU 情况下, cluster 对象会是一个单例,
     多核 CPU 并且 Node 应用处于 cluster 模式情况下,则会是多例!
 */
-var cluster;
+let cluster;
 if (!cluster) {
   cluster = new Redis.Cluster(config.Redis.cluster, {
     scaleReads: 'slave' // 读写分离
@@ -38,7 +38,7 @@ module.exports = {
     if (typeof expires === 'undefined') {
       cluster.set(key, value);
     } else {
-      var pipeline = cluster.pipeline();
+      let pipeline = cluster.pipeline();
       pipeline.set(key, value).expire(key, expires).exec((err, results) => {
         if (err) {
           console.error('--- redis set error:', err);
