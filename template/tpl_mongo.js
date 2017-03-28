@@ -44,7 +44,7 @@ module.exports = {
     */
     insertDocument: (collectionName, doc, callback) => {
         let collection = db.collection(collectionName);
-        doc.createAt = Date();
+        doc.createAt = new Date();
         collection.insertOne(doc, (err, result) => {
             callback(err, result);
         });
@@ -338,7 +338,7 @@ module.exports = {
         if (updatedDoc.hasOwnProperty('$push') || updatedDoc.hasOwnProperty('$pull') || updatedDoc.hasOwnProperty('$unset')) {
             update_doc = updatedDoc;
         } else {
-            updatedDoc.updateAt = Date();
+            updatedDoc.updateAt = new Date();
             update_doc = { $set: updatedDoc };
         }
         collection.updateOne(conditionDoc, update_doc, (err, result) => {
@@ -355,7 +355,7 @@ module.exports = {
      * @param {Function} callback callback(err,result).
      */
     updateDocuments: (collectionName, conditionDoc, updatedDoc, callback) => {
-        updatedDoc.updateAt = new Date();
+        updatedDoc.updateAt = new new Date();
         let collection = db.collection(collectionName);
         delete updatedDoc._id; // don't update _id & createAt field.
         delete updatedDoc.createAt;
