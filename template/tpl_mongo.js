@@ -1,9 +1,10 @@
 module.exports = `/**
-  Create By brainqi@outlook.com  2016-08-12 09:40:00
+  Create By me@qixin.io  2016-08-12 09:40:00
 
   MongoDB common operation utils:
   - Insert One Document.
   - Insert Many Documents.
+  - Aggregate For $lookup
   - Find Document.
   - Find Specified Document.
   - Find All Documents with a Query Filter and Return results with page info.
@@ -21,14 +22,26 @@ const config = require('../conf/config'),
     MongoClient = require('mongodb').MongoClient;
 let db;
 
-// MongoClient connection pooling.
-MongoClient.connect(config.Mongo.url, (err, database) => {
-    if (err) throw err;
-    // Initialize connection once.
-    db = database;
-});
+async function _init() {
+    if (!db) {
+        db = await new Promise(
+            (resolve, reject) => {
+                MongoClient.connect(config.Mongo.url, (err, _db) => {
+                    err != null ? reject(err) : resolve(_db);
+                });
+            }
+        );
+    }
+}
+
+(async () => {
+    await _init();
+})();
 
 module.exports = {
+    init: async () => {
+        await _init();
+    },
     /**
      * Get Mongo Database Instance.
      */
@@ -88,11 +101,11 @@ module.exports = {
     /**
      * Aggregate For $lookup
      * 
-     * @param {String} collectionName 
-     * @param {Object} lookupDoc { from: '', localField: '', foreignField: '', as: ''}
-     * @param {Object} matchDoc like having or where in SQL
-     * @param {Object} pageDoc page params.
-     * @param {Function} callback callback function return err,docs
+     * @param {String} collectionName - collection name
+     * @param {Object} lookupDoc - { from: <collection to join>, localField: <field from the input documents>, foreignField: <field from the documents of the "from" collection>, as: <output array field>}
+     * @param {Object} matchDoc - like having or where in SQL
+     * @param {Object} pageDoc - page params.
+     * @param {Function} callback - callback function return err,docs
      */
     aggregateForLookup: (collectionName, lookupDoc, matchDoc, pageDoc, callback) => {
         let page = pageDoc.page == null ? 1 : parseInt(pageDoc.page);
@@ -154,6 +167,10 @@ module.exports = {
         let skip = (page - 1) * size;
         delete queryDoc.page;
         delete queryDoc.size;
+        for (let pro in queryDoc) {
+            if (!queryDoc[pro]) // delete null property.
+                delete queryDoc[pro];
+        }
         let collection = db.collection(collectionName);
         // desc by create time.
         collection.find(queryDoc)
@@ -181,6 +198,10 @@ module.exports = {
      * @param {Function} callback callback(docs).
      */
     findAllDocuments: (collectionName, queryDoc, callback) => {
+        for (let pro in queryDoc) {
+            if (!queryDoc[pro]) // delete null property.
+                delete queryDoc[pro];
+        }
         let collection = db.collection(collectionName);
         collection.find(queryDoc)
             .toArray((err, docs) => {
@@ -197,6 +218,10 @@ module.exports = {
      * @param {Function} callback callback(docs).
      */
     findAllDocumentsSorted: (collectionName, queryDoc, sortDoc, callback) => {
+        for (let pro in queryDoc) {
+            if (!queryDoc[pro]) // delete null property.
+                delete queryDoc[pro];
+        }
         let collection = db.collection(collectionName);
         collection.find(queryDoc)
             .sort(sortDoc)
@@ -214,6 +239,10 @@ module.exports = {
      * @param {Function} callback callback(doc).
      */
     findAllSpecifiedDocuments: (collectionName, queryDoc, specifiedDoc, callback) => {
+        for (let pro in queryDoc) {
+            if (!queryDoc[pro]) // delete null property.
+                delete queryDoc[pro];
+        }
         let collection = db.collection(collectionName);
         collection.find(queryDoc, specifiedDoc)
             .toArray((err, docs) => {
@@ -237,6 +266,10 @@ module.exports = {
         let skip = (page - 1) * size;
         delete queryDoc.page;
         delete queryDoc.size;
+        for (let pro in queryDoc) {
+            if (!queryDoc[pro]) // delete null property.
+                delete queryDoc[pro];
+        }
         let collection = db.collection(collectionName);
         collection.find(queryDoc, specifiedDoc)
             .sort({ createAt: -1 })
@@ -271,6 +304,10 @@ module.exports = {
         let skip = (page - 1) * size;
         delete queryDoc.page;
         delete queryDoc.size;
+        for (let pro in queryDoc) {
+            if (!queryDoc[pro]) // delete null property.
+                delete queryDoc[pro];
+        }
         let collection = db.collection(collectionName);
 
         collection.find(queryDoc, specifiedDoc)
@@ -299,6 +336,10 @@ module.exports = {
      * @param {Function} callback callback(docs).
      */
     findAllSpecifiedSortedDocuments: (collectionName, queryDoc, specifiedDoc, sortDoc, callback) => {
+        for (let pro in queryDoc) {
+            if (!queryDoc[pro]) // delete null property.
+                delete queryDoc[pro];
+        }
         let collection = db.collection(collectionName);
         collection.find(queryDoc, specifiedDoc)
             .sort(sortDoc)
@@ -316,6 +357,10 @@ module.exports = {
      * @param {Function} callback callback(results).
      */
     findCount: (collectionName, queryDoc, callback) => {
+        for (let pro in queryDoc) {
+            if (!queryDoc[pro]) // delete null property.
+                delete queryDoc[pro];
+        }
         let collection = db.collection(collectionName);
         collection.count(queryDoc, (err, count) => {
             callback(count);
@@ -355,7 +400,7 @@ module.exports = {
      * @param {Function} callback callback(err,result).
      */
     updateDocuments: (collectionName, conditionDoc, updatedDoc, callback) => {
-        updatedDoc.updateAt = new new Date();
+        updatedDoc.updateAt = new Date();
         let collection = db.collection(collectionName);
         delete updatedDoc._id; // don't update _id & createAt field.
         delete updatedDoc.createAt;

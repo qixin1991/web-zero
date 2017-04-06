@@ -1,11 +1,11 @@
 {
     "name": "web-zero",
-    "version": "0.2.1",
+    "version": "0.2.2",
     "description": "Nodejs web project code scaffold base on Koa@2",
     "main": "index.js",
     "scripts": {
         "start": "node index.js",
-        "test": "echo \"Error: no test specified\" && exit 1"
+        "test": "echo \"no test specified\" && exit 0"
     },
     "repository": {
         "type": "git",
