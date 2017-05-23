@@ -168,7 +168,7 @@ module.exports = {
         delete queryDoc.page;
         delete queryDoc.size;
         for (let pro in queryDoc) {
-            if (!queryDoc[pro]) // delete null property.
+            if (!queryDoc[pro] && queryDoc[pro] !== 0) // delete null property.
                 delete queryDoc[pro];
         }
         let collection = db.collection(collectionName);
