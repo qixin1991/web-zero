@@ -30,7 +30,7 @@ module.exports = {
     update: (doc) => {
         return new Promise(
             (resolve, reject) => {
-                mongo.updateDocument('$option', { _id: doc._id }, doc, (err, result) => {
+                mongo.updateDocument('$option', { _id: new ObjectId(doc._id) }, doc, (err, result) => {
                     if (err != null || result.result.n == 0) {
                         reject("系统异常,更新失败!");
                     } else {
@@ -42,7 +42,7 @@ module.exports = {
     delete: (id) => {
         return new Promise(
             (resolve, reject) => {
-                mongo.removeDocument('$option', { _id: id }, (err, res) => {
+                mongo.removeDocument('$option', { _id: new ObjectId(id) }, (err, res) => {
                     if (err) reject("系统异常,删除失败!");
                     resolve(null);
                 });
