@@ -2,6 +2,8 @@
 
 Nodejs web project code scaffold base on Koa@2.
 
+> Typescript Version: https://github.com/qixin1991/web-ts.git
+
 # demo
 ![web-zero-demo](http://brain.qiniudn.com/web-zero-demo.gif)
 
