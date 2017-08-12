@@ -78,12 +78,21 @@ async function del_dao(option) {
 
 async function new_route(option) {
     await new Promise((resolve, reject) => {
-        fs.writeFile(path.join(pwd, 'routes', option + '.js'), tpl.base_router.replace(/\$option/g, option), (err) => {
-            if (err)
-                throw err;
-            console.log(` ---> Create File\troutes/${option}.js \tsuccess...`);
-            resolve();
-        });
+        if (db_type && db_type == 'mysql') {
+            fs.writeFile(path.join(pwd, 'routes', option + '.js'), tpl.router_mysql.replace(/\$option/g, option), (err) => {
+                if (err)
+                    throw err;
+                console.log(` ---> Create File\troutes/${option}.js \tsuccess...`);
+                resolve();
+            });
+        } else {
+            fs.writeFile(path.join(pwd, 'routes', option + '.js'), tpl.base_router.replace(/\$option/g, option), (err) => {
+                if (err)
+                    throw err;
+                console.log(` ---> Create File\troutes/${option}.js \tsuccess...`);
+                resolve();
+            });
+        }
     });
 }
 

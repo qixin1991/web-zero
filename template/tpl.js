@@ -13,6 +13,7 @@ const tpl_app = require('./tpl_app'),
   tpl_router = require('./tpl_router'),
   tpl_tools = require('./tpl_tools'),
   tpl_dao = require('./tpl_dao'),
+  tpl_router_mysql = require('./tpl_router_mysql'),
   tpl_dao_mysql = require('./tpl_dao_mysql');
 
 module.exports = {
@@ -31,5 +32,6 @@ module.exports = {
   base_router: tpl_router,
   base_dao: tpl_dao,
   tools: tpl_tools,
+  router_mysql: tpl_router_mysql,
   mysql_dao: tpl_dao_mysql
 }
