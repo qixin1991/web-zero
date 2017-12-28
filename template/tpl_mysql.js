@@ -74,7 +74,7 @@ module.exports = {
     let queryStr = '';
     for (let i in params) {
       if (isNaN(params[i])) { // 非 number 类型，使用模糊检索方式
-        queryStr += ' and ' + i + ' like \'%' + params[i] + '%\'';
+        queryStr += ' and ' + i + ' like "%' + params[i] + '%"';
       } else { // nunmber 类型，等值检索
         queryStr += ' and ' + i + '=' + params[i];
       }
@@ -133,7 +133,7 @@ module.exports = {
     let queryStr = '';
     for (let i in params) {
       if (isNaN(params[i])) { // 非 number 类型，使用模糊检索方式
-        queryStr += ' and ' + i + ' like \'%' + params[i] + '%\'';
+        queryStr += ' and ' + i + ' like "%' + params[i] + '%"';
       } else { // nunmber 类型，等值检索
         queryStr += ' and ' + i + '=' + params[i];
       }
