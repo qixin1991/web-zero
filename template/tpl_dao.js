@@ -1,4 +1,4 @@
-module.exports = `const mongo = require('../tools/mongo'),
+module.exports = `const mongo = require('$daoPath'),
  ObjectId = require('mongodb').ObjectID;
 
 module.exports = {

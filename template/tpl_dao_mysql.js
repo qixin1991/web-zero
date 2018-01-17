@@ -1,4 +1,4 @@
-module.exports = `const mysql = require('../tools/mysql');
+module.exports = `const mysql = require('$daoPath');
 
 module.exports = {
     list: (params) => {

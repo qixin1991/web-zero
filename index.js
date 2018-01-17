@@ -29,7 +29,7 @@ switch (operation) {
 }
 
 function usage_info() {
-    const usage = `Usage: web-zero operation [init | new | delete] option [module_name] [databse_type]\n\nExample:\n\t web-zero init \t\t\t Create a api project named current dir.\n\t web-zero new users \t\t Create routes/users.js and dao/users.js files.\n\t web-zero new users mysql \t Create users module with DB base on mysql.\n\t web-zero delete users \t\t Delete routes/users.js and dao/users.js files.`;
+    const usage = `Version:${require(path.join(__dirname, 'package.json').version)}\nUsage: web-zero operation [init | new | delete] option [module_name] [databse_type]\n\nExample:\n\t web-zero init \t\t\t Create a api project named current dir.\n\t web-zero new users \t\t Create routes/users.js and dao/users.js files.\n\t web-zero new users mysql \t Create users module with DB base on mysql.\n\t web-zero delete users \t\t Delete routes/users.js and dao/users.js files.`;
     console.log(usage);
 }
 
@@ -90,14 +90,14 @@ async function new_route(option) {
             daoPath = '../dao' + option;
         }
         if (db_type && db_type == 'mysql') {
-            fs.writeFile(path.join(pwd, 'routes', option + '.js'), tpl.router_mysql.replace(/\$daoPath/g, daoPath), (err) => {
+            fs.writeFile(path.join(pwd, 'routes', option + '.js'), tpl.router_mysql.replace(/\$daoPath/g, daoPath).replace(/\$option/g, option), (err) => {
                 if (err)
                     throw err;
                 console.log(` ---> Create File\troutes/${option}.js \tsuccess...`);
                 resolve();
             });
         } else {
-            fs.writeFile(path.join(pwd, 'routes', option + '.js'), tpl.base_router.replace(/\$daoPath/g, daoPath), (err) => {
+            fs.writeFile(path.join(pwd, 'routes', option + '.js'), tpl.base_router.replace(/\$daoPath/g, daoPath).replace(/\$option/g, option), (err) => {
                 if (err)
                     throw err;
                 console.log(` ---> Create File\troutes/${option}.js \tsuccess...`);
@@ -109,22 +109,26 @@ async function new_route(option) {
 
 async function new_dao(option) {
     await new Promise((resolve, reject) => {
+        let daoPath = null;
         if (option.indexOf('/')) {
             let dir = option.split('/')[0];
             let p = path.join(pwd, 'dao', dir);
             if (!fs.existsSync(p)) {
                 fs.mkdirSync(p);
             }
+            daoPath = '../../';
+        } else {
+            daoPath = '../';
         }
         if (db_type && db_type == 'mysql') {
-            fs.writeFile(path.join(pwd, 'dao', option + '.js'), tpl.mysql_dao.replace(/\$option/g, option), (err) => {
+            fs.writeFile(path.join(pwd, 'dao', option + '.js'), tpl.mysql_dao.replace(/\$daoPath/g, daoPath + 'mysql').replace(/\$option/g, option), (err) => {
                 if (err)
                     throw err;
                 console.log(` ---> Create File\tdao/${option}.js\t\tsuccess...`);
                 resolve();
             });
         } else {
-            fs.writeFile(path.join(pwd, 'dao', option + '.js'), tpl.base_dao.replace(/\$option/g, option), (err) => {
+            fs.writeFile(path.join(pwd, 'dao', option + '.js'), tpl.base_dao.replace(/\$daoPath/g, daoPath + 'mongo').replace(/\$option/g, option), (err) => {
                 if (err)
                     throw err;
                 console.log(` ---> Create File\tdao/${option}.js\t\tsuccess...`);
