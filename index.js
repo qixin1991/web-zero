@@ -110,25 +110,28 @@ async function new_route(option) {
 async function new_dao(option) {
     await new Promise((resolve, reject) => {
         let daoPath = null;
+        let table = null;
         if (option.indexOf('/')) {
             let dir = option.split('/')[0];
             let p = path.join(pwd, 'dao', dir);
             if (!fs.existsSync(p)) {
                 fs.mkdirSync(p);
             }
-            daoPath = '../../';
+            daoPath = '../../tools/';
+            table = option.split('/')[0] + '_' + option.split('/')[1];
         } else {
-            daoPath = '../';
+            daoPath = '../tools/';
+            table = option;
         }
         if (db_type && db_type == 'mysql') {
-            fs.writeFile(path.join(pwd, 'dao', option + '.js'), tpl.mysql_dao.replace(/\$daoPath/g, daoPath + 'mysql').replace(/\$option/g, option), (err) => {
+            fs.writeFile(path.join(pwd, 'dao', option + '.js'), tpl.mysql_dao.replace(/\$daoPath/g, daoPath + 'mysql').replace(/\$option/g, table), (err) => {
                 if (err)
                     throw err;
                 console.log(` ---> Create File\tdao/${option}.js\t\tsuccess...`);
                 resolve();
             });
         } else {
-            fs.writeFile(path.join(pwd, 'dao', option + '.js'), tpl.base_dao.replace(/\$daoPath/g, daoPath + 'mongo').replace(/\$option/g, option), (err) => {
+            fs.writeFile(path.join(pwd, 'dao', option + '.js'), tpl.base_dao.replace(/\$daoPath/g, daoPath + 'mongo').replace(/\$option/g, table), (err) => {
                 if (err)
                     throw err;
                 console.log(` ---> Create File\tdao/${option}.js\t\tsuccess...`);
