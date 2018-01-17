@@ -29,7 +29,7 @@ switch (operation) {
 }
 
 function usage_info() {
-    const usage = `Version:${require(path.join(__dirname, 'package.json').version)}\nUsage: web-zero operation [init | new | delete] option [module_name] [databse_type]\n\nExample:\n\t web-zero init \t\t\t Create a api project named current dir.\n\t web-zero new users \t\t Create routes/users.js and dao/users.js files.\n\t web-zero new users mysql \t Create users module with DB base on mysql.\n\t web-zero delete users \t\t Delete routes/users.js and dao/users.js files.`;
+    const usage = `Version:${require(path.join(__dirname, 'package.json')).version}\nUsage: web-zero operation [init | new | delete] option [module_name] [databse_type]\n\nExample:\n\t web-zero init \t\t\t Create a api project named current dir.\n\t web-zero new users \t\t Create routes/users.js and dao/users.js files.\n\t web-zero new users mysql \t Create users module with DB base on mysql.\n\t web-zero delete users \t\t Delete routes/users.js and dao/users.js files.`;
     console.log(usage);
 }
 
