@@ -78,6 +78,13 @@ async function del_dao(option) {
 
 async function new_route(option) {
     await new Promise((resolve, reject) => {
+        if (option.indexOf('/')) {
+            let dir = option.split('/')[0];
+            let p = path.join(pwd, 'routes', dir);
+            if (!fs.existsSync(p)){
+                fs.mkdirSync(p);
+            }
+        }
         if (db_type && db_type == 'mysql') {
             fs.writeFile(path.join(pwd, 'routes', option + '.js'), tpl.router_mysql.replace(/\$option/g, option), (err) => {
                 if (err)
@@ -98,6 +105,13 @@ async function new_route(option) {
 
 async function new_dao(option) {
     await new Promise((resolve, reject) => {
+        if (option.indexOf('/')) {
+            let dir = option.split('/')[0];
+            let p = path.join(pwd, 'routes', dir);
+            if (!fs.existsSync(p)){
+                fs.mkdirSync(p);
+            }
+        }
         if (db_type && db_type == 'mysql') {
             fs.writeFile(path.join(pwd, 'dao', option + '.js'), tpl.mysql_dao.replace(/\$option/g, option), (err) => {
                 if (err)

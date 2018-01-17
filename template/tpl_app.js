@@ -15,14 +15,6 @@ app.use(async (ctx, next) => {
   await next();
 });
 
-// X-Response-Time Middleware
-// app.use(async (ctx, next) => {
-//   let start = new Date();
-//   await next();
-//   let ms = new Date() - start;
-//   ctx.set('X-Response-Time', ms + 'ms');
-// });
-
 // Logger middleware
 app.use(logger());
 app.use(ex('CN'));
@@ -32,26 +24,36 @@ app.use(formParser());
 app.use(routerExt());
 
 const routerDir = path.join(__dirname, 'routes');
-let readFiles = () => {
+let readFiles = (readDir) => {
   return new Promise((resolve, reject) => {
-    fs.readdir(routerDir, (err, files) => {
+    fs.readdir(readDir, (err, files) => {
       resolve(files.filter((f) => {
-        return f.endsWith('.js') && f != 'base.js';
-      }))
+        return f.endsWith('.js') || fs.statSync(path.join(readDir, f)).isDirectory();
+      }));
     });
   });
 };
 
-(async () => {
-  let files = await readFiles();
+// load router and nested router
+async function loadRoutes(readDir) {
+  let files = await readFiles(readDir);
   for (let file of files) {
     try {
-      app.use(require(path.join(routerDir, file)).routes());
+      let currentPath = path.join(readDir, file);
+      if (fs.statSync(currentPath).isDirectory()) {
+        await loadRoutes(currentPath);
+      } else {
+        app.use(require(currentPath).routes());
+      }
     } catch (error) {
-      console.error(' ---> Start Failure, please check the config files.');
+      console.error(' ---> Start Failure.',error);
       process.exit(0);
     }
   }
+}
+
+(async () => {
+  await loadRoutes(routerDir);
 })();
 
 let port = 3000;
