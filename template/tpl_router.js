@@ -27,7 +27,7 @@ router.delete('/:id', async ctx => {
     ctx.body = { code: 200, msg: 'ok' };
 });
 router.get('/:id', async ctx => {
-    let doc = await dao.get(ctx.params.id);
+    let doc = await dao.get({ _id: new ObjectId(ctx.params.id) });
     ctx.body = { code: 200, data: doc };
 });
 

@@ -1,5 +1,5 @@
 module.exports = `const redis = require('../dao/redis'),
-    mongo = require('../dao/mongo'),
+    mongo = require('../tools/mongo'),
     config = require('../conf/config');
 
 module.exports = () => {

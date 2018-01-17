@@ -1,6 +1,5 @@
 module.exports = `const Redis = require('ioredis'),
  config = require('../conf/config'),
- mongo = require('./mongo'),
  security = require('../tools/security');
 
 /* Note:

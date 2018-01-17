@@ -107,7 +107,7 @@ async function new_dao(option) {
     await new Promise((resolve, reject) => {
         if (option.indexOf('/')) {
             let dir = option.split('/')[0];
-            let p = path.join(pwd, 'routes', dir);
+            let p = path.join(pwd, 'dao', dir);
             if (!fs.existsSync(p)){
                 fs.mkdirSync(p);
             }
@@ -266,37 +266,37 @@ async function init_file() {
      * create mongo.js | redis.js | qiniu.js | mysql.js
      */
     await new Promise((resolve, reject) => {
-        fs.writeFile(path.join(pwd, 'dao', 'mongo.js'), tpl.mongo, (err) => {
+        fs.writeFile(path.join(pwd, 'tools', 'mongo.js'), tpl.mongo, (err) => {
             if (err)
                 throw err;
-            console.log(' ---> Create File\tdao/mongo.js\t\tsuccess...');
+            console.log(' ---> Create File\ttools/mongo.js\t\tsuccess...');
             resolve();
         });
     });
 
     await new Promise((resolve, reject) => {
-        fs.writeFile(path.join(pwd, 'dao', 'redis.js'), tpl.redis, (err) => {
+        fs.writeFile(path.join(pwd, 'tools', 'redis.js'), tpl.redis, (err) => {
             if (err)
                 throw err;
-            console.log(' ---> Create File\tdao/redis.js\t\tsuccess...');
+            console.log(' ---> Create File\ttools/redis.js\t\tsuccess...');
             resolve();
         });
     });
 
     await new Promise((resolve, reject) => {
-        fs.writeFile(path.join(pwd, 'dao', 'qiniu.js'), tpl.qiniu, (err) => {
+        fs.writeFile(path.join(pwd, 'tools', 'qiniu.js'), tpl.qiniu, (err) => {
             if (err)
                 throw err;
-            console.log(' ---> Create File\tdao/qiniu.js\t\tsuccess...');
+            console.log(' ---> Create File\ttools/qiniu.js\t\tsuccess...');
             resolve();
         });
     });
 
     await new Promise((resolve, reject) => {
-        fs.writeFile(path.join(pwd, 'dao', 'mysql.js'), tpl.mysql, (err) => {
+        fs.writeFile(path.join(pwd, 'tools', 'mysql.js'), tpl.mysql, (err) => {
             if (err)
                 throw err;
-            console.log(' ---> Create File\tdao/mysql.js\t\tsuccess...');
+            console.log(' ---> Create File\ttools/mysql.js\t\tsuccess...');
             resolve();
         });
     });
@@ -317,10 +317,10 @@ async function init_file() {
 async function init_dependencies() {
     pkg.dependencies = {
         "ioredis": "^2.3.0",
-        "koa": "^2.0.0",
-        "koa-bodyparser": "^3.2.0",
-        "koa-exception": "^2.0.0",
-        "koa-router": "^7.0.1",
+        "koa": "^2.4.1",
+        "koa-bodyparser": "^4.2.0",
+        "koa-exception": "^2.0.4",
+        "koa-router": "^7.3.0",
         "koa-router-form-parser": "0.0.1",
         "mongodb": "^2.2.8",
         "mysql": "^2.11.1",

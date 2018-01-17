@@ -1,4 +1,4 @@
-module.exports = `const mysql = require('./mysql');
+module.exports = `const mysql = require('../tools/mysql');
 
 module.exports = {
     list: (params) => {

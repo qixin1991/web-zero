@@ -1,4 +1,4 @@
-module.exports = `const mongo = require('./mongo'),
+module.exports = `const mongo = require('../tools/mongo'),
  ObjectId = require('mongodb').ObjectID;
 
 module.exports = {
