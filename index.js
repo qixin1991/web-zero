@@ -79,7 +79,7 @@ async function del_dao(option) {
 async function new_route(option) {
     await new Promise((resolve, reject) => {
         let daoPath = null;
-        if (option.indexOf('/')) {
+        if (option.indexOf('/') > -1) {
             let dir = option.split('/')[0];
             let p = path.join(pwd, 'routes', dir);
             if (!fs.existsSync(p)) {
@@ -111,7 +111,7 @@ async function new_dao(option) {
     await new Promise((resolve, reject) => {
         let daoPath = null;
         let table = null;
-        if (option.indexOf('/')) {
+        if (option.indexOf('/') > -1) {
             let dir = option.split('/')[0];
             let p = path.join(pwd, 'dao', dir);
             if (!fs.existsSync(p)) {
