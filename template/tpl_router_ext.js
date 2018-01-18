@@ -1,4 +1,4 @@
-module.exports = `const redis = require('../dao/redis'),
+module.exports = `const redis = require('../tools/redis'),
     mongo = require('../tools/mongo'),
     config = require('../conf/config');
 
