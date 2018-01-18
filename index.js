@@ -87,7 +87,7 @@ async function new_route(option) {
             }
             daoPath = '../../dao/' + option;
         } else {
-            daoPath = '../dao' + option;
+            daoPath = '../dao/' + option;
         }
         if (db_type && db_type == 'mysql') {
             fs.writeFile(path.join(pwd, 'routes', option + '.js'), tpl.router_mysql.replace(/\$daoPath/g, daoPath).replace(/\$option/g, option), (err) => {
