@@ -189,7 +189,7 @@ module.exports = {
     });
   },
   deleteById: function (tabName, id, callback) {
-    const sql = \`delete from ${tabName} where id = ?\`;
+    const sql = \`delete from \${tabName} where id = ?\`;
     this.execSafely(sql, [id], (err, result) => {
       callback(err, result);
     });
