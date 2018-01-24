@@ -47,9 +47,8 @@ module.exports = {
     delete: (id) => {
         return new Promise(
             (resolve, reject) => {
-                let params = { id: id, status: -1 };
                 if (!id) reject(new Error('id 为必传参数'));
-                mysql.updateById('$option', params, (err, res) => {
+                mysql.deleteById('$option', id, (err, res) => {
                     if (err) reject(new Error("删除失败，系统异常!"));
                     resolve(res);
                 });

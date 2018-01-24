@@ -188,6 +188,12 @@ module.exports = {
       callback(err, result);
     });
   },
+  deleteById: function (tabName, id, callback) {
+    const sql = \`delete from ${tabName} where id = ?\`;
+    this.execSafely(sql, [id], (err, result) => {
+      callback(err, result);
+    });
+  },
   // ---------------------------------------------------------------------------
   /** insert,update,delete 等需要事务的场景下适用
    * @param {String} sql sql string
