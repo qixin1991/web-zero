@@ -47,6 +47,15 @@ module.exports = {
       callback(err, result);
     });
   },
+  findOne: function (tabName, params, callback) {
+    this.querySortedAndSpecifiedFields(tabName, null, { update_at: 'desc' }, params, (err, result) => {
+      if (err) {
+        callback(err, null);
+      } else {
+        callback(err, result.length > 0 ? result[0] : null);
+      }
+    });
+  },
   // ---------------------------------------------------------------------------
   /**
    * Operation For SQL query without page info.

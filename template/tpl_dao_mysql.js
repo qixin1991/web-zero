@@ -14,7 +14,7 @@ module.exports = {
     get: (params) => {
         return new Promise(
             (resolve, reject) => {
-                mysql.query('$option', params, (err, res) => {
+                mysql.findOne('$option', params, (err, res) => {
                     if (err) reject(new Error('查询失败，系统异常!'));
                     resolve(res);
                 })
